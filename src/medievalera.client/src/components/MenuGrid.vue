@@ -20,13 +20,7 @@
             <p class="menu-description">{{ item.description }}</p>
           </div>
         </button>
-      </div>
-
-      <div v-if="currentMessage" class="message-container">
-        <div class="message">
-          {{ currentMessage }}
-        </div>
-      </div>
+      </div>      
     </div>
   </div>
 </template>
@@ -48,9 +42,9 @@ export default {
       currentMessage: ''
     }
   },
-  async mounted() {
-    await this.fetchData();
-    },
+  //async mounted() {
+  //  await this.fetchData();
+  //  },
     async created() {
       // fetch the data when the view is created and the data is
       // already being observed
@@ -87,17 +81,6 @@ export default {
     },
 
     handleMenuClick(item) {
-      const messages = {
-        'profile': '📊 Открыт раздел профиля. Здесь вы можете управлять своими данными.',
-        'settings': '⚙️ Открыты настройки системы. Настройте параметры под себя.',
-        'reports': '📈 Загружаются отчеты... Пожалуйста, подождите.',
-        'help': '❔ Раздел помощи. Выберите интересующий вас вопрос.',
-        'notifications': '🔔 У вас 3 новых уведомления. Проверьте их!',
-        'logout': '🚪 Вы уверены, что хотите выйти из системы?'
-      };
-
-      this.currentMessage = messages[item.actionType] || `Действие: ${item.title}`;
-
       // Эмитим событие для родительского компонента
       this.$emit('menu-item-click', item);
 

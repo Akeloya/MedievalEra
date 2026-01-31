@@ -9,7 +9,7 @@ namespace MedievalEra.Server.Controllers
     [Route("[controller]")]
     public class MenuController : ControllerBase
     {
-        [HttpGet(Name ="GetMenu")]
+        [HttpGet(Name = "GetMenu")]
         public IActionResult Get()
         {
             return Ok(new { message = "MenuController работает!", timestamp = DateTime.Now });
@@ -18,45 +18,46 @@ namespace MedievalEra.Server.Controllers
         [HttpGet("items")]
         public IActionResult GetMenuItems()
         {
+            var i = 1;
             var menuItems = new List<MenuItem>
         {
             new MenuItem {
-                Id = "1",
+                Id = $"{i++}",
                 Title = "Профиль",
                 Icon = "👤",
                 Description = "Управление профилем",
                 ActionType = "profile"
             },
             new MenuItem {
-                Id = "2",
-                Title = "Настройки",
+                Id = $"{i++}",
+                Title = "Настройки игры",
                 Icon = "⚙️",
                 Description = "Настройки системы",
                 ActionType = "settings"
             },
             new MenuItem {
-                Id = "3",
-                Title = "Отчеты",
+                Id = $"{i++}",
+                Title = "Результаты",
                 Icon = "📊",
-                Description = "Просмотр отчетов",
-                ActionType = "reports"
+                Description = "Просмотр результатов игр",
+                ActionType = "scores"
             },
             new MenuItem {
-                Id = "4",
+                Id = $"{i++}",
                 Title = "Помощь",
                 Icon = "❓",
                 Description = "Справка и поддержка",
                 ActionType = "help"
             },
             new MenuItem {
-                Id = "5",
+                Id = $"{i++}",
                 Title = "Уведомления",
                 Icon = "🔔",
                 Description = "Системные уведомления",
                 ActionType = "notifications"
             },
             new MenuItem {
-                Id = "6",
+                Id = $"{i++}",
                 Title = "Выход",
                 Icon = "🚪",
                 Description = "Завершение работы",
