@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="medievalera.client/medievalera.client.esproj">
+    <Build />
+    <Deploy />
+  </Project>
+  <Project Path="MedievalEra.Server/MedievalEra.Server.csproj" />
+</Solution>

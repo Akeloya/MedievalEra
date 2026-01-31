@@ -1,0 +1,37 @@
+[
+  {
+    "Name": "Full",
+    "Projects": [
+      {
+        "Path": "medievalera.client\\medievalera.client.esproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "MedievalEra.Server\\MedievalEra.Server.csproj",
+        "Action": "Start"
+      }
+    ]
+  },
+  {
+    "Name": "Only server",
+    "Projects": [
+      {
+        "Path": "MedievalEra.Server\\MedievalEra.Server.csproj",
+        "Action": "Start"
+      }
+    ]
+  },
+  {
+    "Name": "Only client",
+    "Projects": [
+      {
+        "Path": "medievalera.client\\medievalera.client.esproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "MedievalEra.Server\\MedievalEra.Server.csproj",
+        "Action": "StartWithoutDebugging"
+      }
+    ]
+  }
+]

@@ -1,0 +1,35 @@
+[
+  {
+    "Name": "Полная отладка",
+    "Projects": [
+      {
+        "Path": "medievalera.client\\medievalera.client.esproj",
+        "Action": "Start"
+      },
+      {
+        "Path": "MedievalEra.Server\\MedievalEra.Server.csproj",
+        "Action": "Start"
+      }
+    ]
+  },
+  {
+    "Name": "Только клиент",
+    "Projects": [
+      {
+        "Path": "medievalera.client\\medievalera.client.esproj",
+        "Action": "Start",
+        "DebugTarget": "localhost (Chrome)"
+      }
+    ]
+  },
+  {
+    "Name": "Только сервер",
+    "Projects": [
+      {
+        "Path": "MedievalEra.Server\\MedievalEra.Server.csproj",
+        "Action": "Start",
+        "DebugTarget": "https"
+      }
+    ]
+  }
+]

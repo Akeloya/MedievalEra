@@ -1,0 +1,6 @@
+GET {{MedievalEra.Server_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
+GET {{MedievalEra.Server_HostAddress}}/menu/items
+Accept: application/json
