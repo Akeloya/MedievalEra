@@ -1,16 +1,16 @@
 ﻿using MedievalEra.Server.Core.Game.Enums;
-using MedievalEra.Server.Core.Game.Interfaces;
 
 namespace MedievalEra.Server.Core.Game.Dice.Faces
 {
-    public class PeasantFace : IDiceFace
+    public class PeasantFace(Dictionary<DiceResource, int> values) : ADiceFace(values)
     {
-        public PeasantFace(Dictionary<DiceResouce, int> values)
+        public override DiceType DiceType => DiceType.Peasant;
+        protected override void CheckAllowed(Dictionary<DiceResource, int> values)
         {
-            Values = values;
+            if (values.Any(p => p.Key is DiceResource.Wood or DiceResource.Stone or DiceResource.Meal
+                    or DiceResource.Building or DiceResource.Skull))
+                return;
+            throw new ArgumentOutOfRangeException(nameof(values));
         }
-        public DiceType DiceType => DiceType.Peasant;
-
-        public Dictionary<DiceResouce, int> Values { get; }
     }
 }

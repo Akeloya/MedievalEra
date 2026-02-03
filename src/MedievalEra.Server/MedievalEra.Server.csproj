@@ -22,8 +22,4 @@
     </ProjectReference>
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Core\Game\Deck\" />
-  </ItemGroup>
-
 </Project>
