@@ -1,4 +1,8 @@
 <Solution>
+  <Folder Name="/Resources/">
+    <File Path="../LICENSE" />
+    <File Path="../README.md" />
+  </Folder>
   <Project Path="medievalera.client/medievalera.client.esproj">
     <Build />
     <Deploy />
