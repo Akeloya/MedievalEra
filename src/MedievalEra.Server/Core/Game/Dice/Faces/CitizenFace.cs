@@ -7,7 +7,7 @@ namespace MedievalEra.Server.Core.Game.Dice.Faces
         public override DiceType DiceType => DiceType.Citizen;
         protected override void CheckAllowed(Dictionary<DiceResource, int> values)
         {
-            if (values.All(p => p.Key is DiceResource.Culture or DiceResource.Goods or DiceResource.Stone))
+            if (values.All(p => p.Key is DiceResource.Culture or DiceResource.Goods or DiceResource.Stone or DiceResource.Building or DiceResource.Skull))
                 return;
             throw new ArgumentOutOfRangeException(nameof(values));
         }

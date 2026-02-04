@@ -8,5 +8,8 @@ namespace MedievalEra.Server.Core.Game.Interfaces
         string Color { get; }
         DiceType DiceType { get; }
         IReadOnlyCollection<IDiceFace> Faces { get; }
+        IDiceFace Roll();
+        void Lock(IDiceFace face);
+        void Unlock();
     }
 }

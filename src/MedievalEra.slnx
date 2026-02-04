@@ -7,5 +7,6 @@
     <Build />
     <Deploy />
   </Project>
+  <Project Path="MedievalEra.Server.Tests/MedievalEra.Server.Tests.csproj" Id="f2d3b00c-59dc-426f-bb84-bac298bb1a34" />
   <Project Path="MedievalEra.Server/MedievalEra.Server.csproj" />
 </Solution>

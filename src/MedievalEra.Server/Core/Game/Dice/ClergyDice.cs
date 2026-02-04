@@ -4,13 +4,10 @@ using MedievalEra.Server.Core.Game.Interfaces;
 
 namespace MedievalEra.Server.Core.Game.Dice
 {
-    public class ClergyDice : IDice
+    public sealed class ClergyDice(IRandomProvider randomProvider) : ADice("Духовенство", "White", DiceType.Clergy, randomProvider)
     {
-        public string Name => "Духовенство";
-        public string Color => "White";
-        public DiceType DiceType => DiceType.Clergy;
-        public IReadOnlyCollection<IDiceFace> Faces { get; } = new List<IDiceFace>
-        {
+        public override IReadOnlyCollection<IDiceFace> Faces { get; } =
+        [
             new ClergyFace(new Dictionary<DiceResource, int>(){
                 { DiceResource.Meal, 2}
             }),
@@ -31,6 +28,6 @@ namespace MedievalEra.Server.Core.Game.Dice
                 { DiceResource.Culture, 2},
                 { DiceResource.Skull, 1}
             })
-        };
+        ];
     }
 }
