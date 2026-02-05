@@ -4,7 +4,7 @@ namespace MedievalEra.Server.Core.Game.Dice.Faces
 {
     public class NobilityFace(Dictionary<DiceResource, int> values) : ADiceFace(values)
     {
-        public override DiceType DiceType => DiceType.Notility;
+        public override DiceType DiceType => DiceType.Nobility;
         protected override void CheckAllowed(Dictionary<DiceResource, int> values)
         {
             if (values.All(p => p.Key is DiceResource.Attack or DiceResource.Defence or DiceResource.Skull or DiceResource.Goods))

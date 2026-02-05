@@ -4,7 +4,7 @@ using MedievalEra.Server.Core.Game.Interfaces;
 
 namespace MedievalEra.Server.Core.Game.Dice
 {
-    public sealed class NobilityDice(IRandomProvider randomProvider) : ADice("Дворянство", "Gray", DiceType.Notility, randomProvider)
+    public sealed class NobilityDice(IRandomProvider randomProvider) : ADice("Дворянство", "Gray", DiceType.Nobility, randomProvider)
     {
         public override IReadOnlyCollection<IDiceFace> Faces { get; } =
         [

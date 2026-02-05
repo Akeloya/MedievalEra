@@ -4,3 +4,7 @@ Accept: application/json
 ###
 GET {{MedievalEra.Server_HostAddress}}/menu/items
 Accept: application/json
+
+###
+GET {{MedievalEra.Server_HostAddress}}/dice
+Accept: application/json

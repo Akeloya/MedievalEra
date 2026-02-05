@@ -1,4 +1,11 @@
 
+using MedievalEra.Server.Core.Game.Common;
+using MedievalEra.Server.Core.Game.Dice;
+using MedievalEra.Server.Core.Game.Interfaces;
+
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
 namespace MedievalEra.Server
 {
     public class Program
@@ -8,9 +15,18 @@ namespace MedievalEra.Server
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
-            builder.Services.AddControllers();
+            builder.Services.AddControllers().AddJsonOptions(options =>
+            {
+                options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+                // или с настройками:
+                options.JsonSerializerOptions.Converters.Add(
+                    new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+            }); ;
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
+
+            builder.Services.AddSingleton<IRandomProvider, DefaultRandomProvider>();
+            builder.Services.AddSingleton<DiceFactory>();
 
             var app = builder.Build();
 

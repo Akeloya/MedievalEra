@@ -6,6 +6,6 @@
         Peasant = 1,
         Citizen = 2,
         Clergy = 3,
-        Notility = 4
+        Nobility = 4
     }
 }

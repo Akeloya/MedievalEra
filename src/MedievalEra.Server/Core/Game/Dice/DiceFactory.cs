@@ -13,7 +13,7 @@ namespace MedievalEra.Server.Core.Game.Dice
             return type switch
             {
                 DiceType.Citizen => new CitizenDice(_randomProvider),
-                DiceType.Notility => new NobilityDice(_randomProvider),
+                DiceType.Nobility => new NobilityDice(_randomProvider),
                 DiceType.Clergy => new ClergyDice(_randomProvider),
                 DiceType.Peasant => new PeasantDice(_randomProvider),
                 DiceType.None => throw new NotImplementedException(),
@@ -23,7 +23,7 @@ namespace MedievalEra.Server.Core.Game.Dice
 
         public IEnumerable<IDice> GetStarterKit()
         {
-            yield return GetDice(DiceType.Notility);
+            yield return GetDice(DiceType.Nobility);
             yield return GetDice(DiceType.Peasant);
             yield return GetDice(DiceType.Peasant);
             yield return GetDice(DiceType.Peasant);
