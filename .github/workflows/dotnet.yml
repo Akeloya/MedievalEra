@@ -40,5 +40,5 @@ jobs:
       run: dotnet build ./src/MedievalEra.Server/MedievalEra.Server.csproj --no-restore -p:DeployOnBuild=true -p:PublishProfile=FolderProfile
       
     # Альтернативный вариант - если используется стандартный шаблон ASP.NET Core с Vue
-    - name: Publish
-      run: dotnet publish ./src/MedievalEra.Server/MedievalEra.Server.csproj -c Release -o ./publish --no-build
+    #- name: Publish
+    #  run: dotnet publish ./src/MedievalEra.Server/MedievalEra.Server.csproj -c Release -o ./publish --no-build
