@@ -12,15 +12,26 @@ on:
 jobs:
   build:
 
-    runs-on: windows-latest
-
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./src
     steps:
     - uses: actions/checkout@v4
-    - name: Setup MSBuild
-      uses: microsoft/setup-msbuild@v2
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
     - name: Restore dependencies      
-      run: dotnet restore ./src/MedievalEra.slnx
-    - name: Build
-      run: dotnet build ./src/MedievalEra.slnx --no-restore
+      run: dotnet restore ./MedievalEra.Server/MedievalEra.Server.csproj
+    - name: Build server
+      run: dotnet build ./MedievalEra.Server/MedievalEra.Server.csproj --no-restore
+    - name: Build client
+      run: npm run dev
+      working-directory: ./medievalera.client
     - name: Test
-      run: dotnet test ./src/MedievalEra.slnx --no-build --verbosity normal
+      run: dotnet test ./MedievalEra.slnx --no-build --verbosity normal
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20' # или ваша версия
