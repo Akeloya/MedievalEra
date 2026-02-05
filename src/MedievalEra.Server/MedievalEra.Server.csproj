@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -16,10 +16,16 @@
     </PackageReference>
   </ItemGroup>
 
-  <ItemGroup Condition="'$(GITHUB_ACTIONS)' != 'true'">
-    <ProjectReference Include="..\medievalera.client\medievalera.client.esproj">
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-  </ItemGroup>
+	<Choose>
+		<When Condition=" '$(GITHUB_ACTIONS)' != 'true' ">
+			<ItemGroup >
+				<ProjectReference Include="..\medievalera.client\medievalera.client.esproj">
+					<ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+				</ProjectReference>
+			</ItemGroup>
+		</When>
+		<Otherwise>
 
+		</Otherwise>
+	</Choose>
 </Project>
