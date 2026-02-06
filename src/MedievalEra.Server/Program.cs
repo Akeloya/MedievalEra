@@ -5,6 +5,8 @@ using MedievalEra.Server.Core.Game.Interfaces;
 
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using MedievalEra.Server.Core.Settings;
+using MedievalEra.Server.Core.Store;
 
 namespace MedievalEra.Server
 {
@@ -27,6 +29,11 @@ namespace MedievalEra.Server
 
             builder.Services.AddSingleton<IRandomProvider, DefaultRandomProvider>();
             builder.Services.AddSingleton<DiceFactory>();
+
+            builder.Services.Configure<DatabaseSettings>(
+                builder.Configuration.GetSection("Database"));
+
+            builder.Services.AddDbContext<AppDbContext>(ServiceLifetime.Scoped);
 
             var app = builder.Build();
 
