@@ -10,10 +10,11 @@ namespace MedievalEra.Server.Core.Game.Dice.Faces
             // ReSharper disable once VirtualMemberCallInConstructor
             CheckAllowed(values);
             Values = values;
+            Choose = SetChoose(values);
         }
         public abstract DiceType DiceType { get; }
         public Dictionary<DiceResource, int> Values { get; }
-
+        public bool Choose { get; }
         public bool Equals(IDiceFace? other)
         {
             if(other == null)
@@ -41,5 +42,18 @@ namespace MedievalEra.Server.Core.Game.Dice.Faces
         }
 
         protected abstract void CheckAllowed(Dictionary<DiceResource, int> values);
+
+        private static bool SetChoose(Dictionary<DiceResource, int> values)
+        {
+            if(values.TryGetValue(DiceResource.Stone, out var stone) && stone == 1)
+            {
+                if (values.TryGetValue(DiceResource.Meal, out var meal) && meal == 2)
+                    return true;
+
+                if (values.TryGetValue(DiceResource.Wood, out var wood) && wood == 2)
+                    return true;
+            }
+            return false;
+        }
     }
 }

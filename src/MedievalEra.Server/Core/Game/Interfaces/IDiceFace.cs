@@ -6,5 +6,9 @@ namespace MedievalEra.Server.Core.Game.Interfaces
     {
         DiceType DiceType { get;}
         Dictionary<DiceResource, int> Values { get; }
+        /// <summary>
+        /// Если нужно выбрать из предложенной коллекции ресурсов или действий
+        /// </summary>
+        bool Choose { get; }
     }
 }
