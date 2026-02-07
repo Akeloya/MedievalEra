@@ -31,12 +31,7 @@
 <script>
   export default {
     name: 'AppHeader',
-    props: {
-      // Свойство для иконки (можно передавать путь или URL)
-      iconSrc: {
-        type: String,
-        default: './assets/logo.svg'
-      },
+    props: {      
       // Свойство для текста
       title: {
         type: String,
@@ -45,7 +40,16 @@
     }
   }
 </script>
-
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: url('./assets/Background.png') no-repeat center center fixed;
+    background-size: cover;
+  }
+</style>
 <style scoped>
   .medieval-era-app {
     font-family: 'Georgia', 'Times New Roman', serif;
@@ -58,11 +62,10 @@
     flex-direction: column;
     justify-content: flex-start; /* Контент вверху */
     align-items: center; /* Центрирование содержимого */
-    box-sizing: border-box; /* Учитываем padding в ширине */
+    box-sizing: border-box; /* Учитываем padding в ширине */    
   }
   /* Стили для шапки */
   .app-header {
-    background: linear-gradient(135deg, #2c3e50 0%, #4a6572 100%);
     border-radius: 10px;
     padding: 25px;
     margin-bottom: 30px;
@@ -116,7 +119,6 @@
 
   /* Стили для основного контента */
   .app-main {
-    background-color: #f8f5f0;
     border-radius: 10px;
     padding: 30px;
     flex: 1; /* Занимает оставшееся пространство */

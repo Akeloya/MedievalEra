@@ -1,7 +1,6 @@
 <template>
   <div class="table-container">
     <table class="custom-table">
-      <!-- Заголовочные строки для колонок 3-6 -->
       <thead>
         <tr>
           <th class="header-empty"></th>
@@ -14,11 +13,10 @@
       </thead>
 
       <tbody>
-        <!-- Строки 1-14 (светло-голубые) -->
         <tr v-for="row in 14"
             :key="row"
             :class="`row-${row} row-color-blue`">
-          <td>{{ row }}</td>
+          <td>{{ `здание ${row}` }}</td>
           <td v-if="row === 1" :rowspan="14" class="merged-cell">
             Здания,<br>окруженные стеной х2
           </td>
@@ -29,64 +27,93 @@
           <td>Строка {{ row }}, Колонка 6</td>
         </tr>
 
-        <!-- Строки 15-20 (светло-желтые) -->
-        <tr v-for="row in 6"
-            :key="row + 14"
-            :class="`row-${row + 14} row-color-yellow`">
-          <td>{{ row + 14 }}</td>
-          <td>Строка {{ row + 14 }}, Колонка 2</td>
-          <td>Строка {{ row + 14 }}, Колонка 3</td>
-          <td>Строка {{ row + 14 }}, Колонка 4</td>
-          <td>Строка {{ row + 14 }}, Колонка 5</td>
-          <td>Строка {{ row + 14 }}, Колонка 6</td>
+        <tr class="row-15 row-color-yellow">
+          <td colspan="2">Бонусы рынка 1/</td>
+          <td>Строка 23, Колонка 3</td>
+          <td>Строка 23, Колонка 4</td>
+          <td>Строка 23, Колонка 5</td>
+          <td>Строка 23, Колонка 6</td>
         </tr>
-
-        <!-- Строки 21-22 (светло-зеленые) -->
-        <tr v-for="row in 2"
-            :key="row + 20"
-            :class="`row-${row + 20} row-color-green`">
-          <td>{{ row + 20 }}</td>
-          <td>Строка {{ row + 20 }}, Колонка 2</td>
-          <td>Строка {{ row + 20 }}, Колонка 3</td>
-          <td>Строка {{ row + 20 }}, Колонка 4</td>
-          <td>Строка {{ row + 20 }}, Колонка 5</td>
-          <td>Строка {{ row + 20 }}, Колонка 6</td>
+        <tr class="row-16 row-color-yellow">
+          <td colspan="2">Бонусы Гильдии 1/</td>
+          <td>Строка 23, Колонка 3</td>
+          <td>Строка 23, Колонка 4</td>
+          <td>Строка 23, Колонка 5</td>
+          <td>Строка 23, Колонка 6</td>
         </tr>
-
-        <!-- Строка 23 (светло-фиолетовая) -->
-        <tr class="row-23 row-color-purple">
-          <td>23</td>
-          <td>Строка 23, Колонка 2</td>
+        <tr class="row-17 row-color-yellow">
+          <td colspan="2">Бонусы университета 1/</td>
+          <td>Строка 23, Колонка 3</td>
+          <td>Строка 23, Колонка 4</td>
+          <td>Строка 23, Колонка 5</td>
+          <td>Строка 23, Колонка 6</td>
+        </tr>
+        <tr class="row-18 row-color-yellow">
+          <td colspan="2">Бонусы Собора 1/</td>
           <td>Строка 23, Колонка 3</td>
           <td>Строка 23, Колонка 4</td>
           <td>Строка 23, Колонка 5</td>
           <td>Строка 23, Колонка 6</td>
         </tr>
 
-        <!-- Строка 24 (без специального цвета) -->
-        <tr class="row-24">
-          <td>24</td>
-          <td>Строка 24, Колонка 2</td>
+        <tr v-for="row in 2"
+            :key="row + 18"
+            :class="`row-${row + 18} row-color-yellow`">
+          <td colspan="2">&nbsp;</td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+        </tr>
+
+        <tr class="row-21 row-color-green">
+          <td colspan="2">Культура 1/иконка</td>
+          <td>Строка 23, Колонка 3</td>
+          <td>Строка 23, Колонка 4</td>
+          <td>Строка 23, Колонка 5</td>
+          <td>Строка 23, Колонка 6</td>
+        </tr>
+        <tr class="row-22 row-color-green">
+          <td colspan="2">Наиболее развитая культура (5)</td>
+          <td>Строка 23, Колонка 3</td>
+          <td>Строка 23, Колонка 4</td>
+          <td>Строка 23, Колонка 5</td>
+          <td>Строка 23, Колонка 6</td>
+        </tr>
+
+        <tr class="row-23 row-color-purple">
+          <td colspan="2">Наибольшая область окруженная стеной (10)</td>
+          <td>Строка 23, Колонка 3</td>
+          <td>Строка 23, Колонка 4</td>
+          <td>Строка 23, Колонка 5</td>
+          <td>Строка 23, Колонка 6</td>
+        </tr>
+
+        <tr class="row-24 row-color-white">
+          <td colspan="2" class="black-bg">Промежуточный итог</td>
           <td>Строка 24, Колонка 3</td>
           <td>Строка 24, Колонка 4</td>
           <td>Строка 24, Колонка 5</td>
           <td>Строка 24, Колонка 6</td>
         </tr>
 
-        <!-- Строка 25 (светло-зеленая) -->
         <tr class="row-25 row-color-green">
-          <td>25</td>
-          <td>Строка 25, Колонка 2</td>
+          <td colspan="2">Очки бедствий</td>
           <td>Строка 25, Колонка 3</td>
           <td>Строка 25, Колонка 4</td>
           <td>Строка 25, Колонка 5</td>
           <td>Строка 25, Колонка 6</td>
         </tr>
 
-        <!-- Строка 26 (без специального цвета) -->
-        <tr class="row-26">
-          <td>26</td>
-          <td>Строка 26, Колонка 2</td>
+        <tr class="row-26 row-color-white">
+          <td colspan="2" class="black-bg">Финальный итог</td>
+          <td>Строка 26, Колонка 3</td>
+          <td>Строка 26, Колонка 4</td>
+          <td>Строка 26, Колонка 5</td>
+          <td>Строка 26, Колонка 6</td>
+        </tr>
+        <tr class="row-26 row-color-white">
+          <td colspan="2" class="red-bg">ТИТУЛ</td>
           <td>Строка 26, Колонка 3</td>
           <td>Строка 26, Колонка 4</td>
           <td>Строка 26, Колонка 5</td>
@@ -112,7 +139,7 @@ export default {
 <style scoped>
   .table-container {
     overflow-x: auto;
-    margin: 20px;
+    margin: 5px;
   }
 
   .custom-table {
@@ -122,17 +149,20 @@ export default {
     font-size: 14px;
   }
 
-    .custom-table th,
-    .custom-table td {
-      border: 1px solid #ddd;
-      padding: 8px 12px;
-      text-align: center;
-      vertical-align: middle;
-    }
+  .custom-table th,
+  .custom-table td {
+    border: 1px solid #aaa;
+    padding: 8px 12px;
+    text-align: center;
+    vertical-align: middle;
+  }
+  .custom-table th.header-empty {
+    border: none;
+  }
 
   /* Заголовочные ячейки */
   .header-empty {
-    background-color: #f5f5f5;
+    background-color: transparent;    
   }
 
   .header-group {
@@ -158,11 +188,21 @@ export default {
     background-color: #f3e5f5; /* светло-фиолетовый */
   }
 
+  .row-color-white {
+    background-color: #fff; /* белый */
+  }
+
+  .col-color-black{
+    background-color: #000;
+    color: #fff;
+  }
+
   /* Объединенная ячейка */
   .merged-cell {
     background-color: #e1f5fe;
     font-weight: bold;
     vertical-align: middle;
+    width: 50px;
   }
 
   .hidden-cell {
@@ -170,14 +210,27 @@ export default {
   }
 
   /* Альтернативный вариант для визуализации границ */
-  .custom-table tr:hover {
-    background-color: rgba(0, 0, 0, 0.05);
+  .custom-table tbody tr:hover {
+    background-color: rgba(100, 100, 200, 0.9);
   }
 
   /* Номера строк */
   .custom-table td:first-child {
     font-weight: bold;
+    font-size: 12px;
+    text-align: left;
     background-color: #f9f9f9;
-    width: 50px;
+    width: 200px;
+  }
+
+  /* Ячейка для выделения строки итогов */
+  .custom-table td:first-child.black-bg {
+    background-color: black;
+    color: white;
+  }
+
+  /* Ячейка для выделения звания */
+  .custom-table td:first-child.red-bg {
+    background-color: #e45628;      
   }
 </style>
