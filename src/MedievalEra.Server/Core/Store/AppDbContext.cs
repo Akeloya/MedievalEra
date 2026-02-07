@@ -1,4 +1,5 @@
 ﻿using MedievalEra.Server.Core.Game.Player;
+using MedievalEra.Server.Core.Settings;
 using MedievalEra.Server.Core.Store.Entitites;
 
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +17,11 @@ namespace MedievalEra.Server.Core.Store
         {
             Sqlite,
             InMemory
+        }
+
+        public AppDbContext(DatabaseSettings settings) : this(settings.Type, settings.ConnectionString)
+        {
+
         }
 
         public AppDbContext(DatabaseType databaseType = DatabaseType.Sqlite,
