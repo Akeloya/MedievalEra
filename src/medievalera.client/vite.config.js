@@ -45,25 +45,20 @@ export default defineConfig({
             '@': fileURLToPath(new URL('./src', import.meta.url))
         }
     },
-    server: {
-        proxy: {
-            '^/weatherforecast': {
-                target,
-                secure: false
-        },
-        // Все запросы, начинающиеся с /api, полетят на бэкенд
-        '^/api': {
-          target: target, // Ваш адрес бэкенда
-          secure: false,
-          // Отрезаем /api из пути: /api/menu превратится в /menu
-          rewrite: (path) => path.replace(/^\/api/, ''),
-          changeOrigin: true
-        },
-        },
-        port: parseInt(env.DEV_SERVER_PORT || '54768'),
-        https: {
-            key: fs.readFileSync(keyFilePath),
-            cert: fs.readFileSync(certFilePath),
-        }
+  server: {
+    proxy: {      
+      // Все запросы, начинающиеся с /api, полетят на бэкенд
+      '^/api': {
+        target,
+        secure: false,
+        // Отрезаем /api из пути: /api/menu превратится в /menu
+        rewrite: (path) => path.replace(/^\/api/, '')        
+      },
+    },
+    port: parseInt(env.DEV_SERVER_PORT || '54768'),
+    https: {
+      key: fs.readFileSync(keyFilePath),
+      cert: fs.readFileSync(certFilePath),
     }
+  }
 })

@@ -26,6 +26,14 @@
 </template>
 
 <script>
+  import { useRouter } from 'vue-router'
+
+  const router = useRouter()
+
+const goToResults = () => {
+  router.push('/results')
+}
+
 export default {
   name: 'MenuGrid',
   props: {
@@ -36,54 +44,50 @@ export default {
   },
   data() {
     return {
-      menuItems: [],
-      loading: true,
+      menuItems: [
+      {
+        id :1,
+        title : "Профиль",
+        icon : "👤",
+        description : "Управление профилем",
+        actionType : "profile"
+      },
+      {
+        id : 2,
+        title : "Настройки игры",
+        icon : "⚙️",
+        description : "Управление профилем",
+        actionType : "settings"
+      },
+      {
+        id : 3,
+        title : "Правила",
+        icon : "🔔",
+        description : "Управление профилем",
+        actionType : "rules"
+      },
+      {
+        id : 4,
+        title : "Результаты",
+        icon : "📊",
+        description : "Управление профилем",
+        actionType : "results"
+      }
+      ],
+      loading: false,
       error: null,
       currentMessage: ''
     }
-  },
-  //async mounted() {
-  //  await this.fetchData();
-  //  },
-    async created() {
-      // fetch the data when the view is created and the data is
-      // already being observed
-      await this.fetchData();
+  },  
+    async created() {    
     },
     watch: {
-      // call again the method if the route changes
-      '$route': 'fetchData'
+      // call again the method if the route changes      
     },
   methods: {
-    async fetchData() {
-      try {
-        this.loading = true;
-        this.error = null;
-
-        var response = await fetch('api/menu/items', {
-          headers: { 'Accept': 'application/json' }
-        });
-        if (response.ok) {
-          this.menuItems = await response.json();
-          this.loading = false;
-        }
-        else {
-          this.error = 'Произошла ошибка запроса данных'
-        }
-        
-        
-      } catch (err) {
-        this.error = err.message;
-        console.error('Ошибка:', err);
-      } finally {
-        this.loading = false;
-      }
-    },
-
     handleMenuClick(item) {
-      // Эмитим событие для родительского компонента
-      this.$emit('menu-item-click', item);
-
+      this.$router.push(item.actionType)
+      
       console.log(`Выполняется действие: ${item.actionType}`, item);
     }
   }
@@ -118,7 +122,7 @@ export default {
 
   @media (min-width: 1200px) {
     .menu-grid {
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(2, 1fr);
     }
   }
 
