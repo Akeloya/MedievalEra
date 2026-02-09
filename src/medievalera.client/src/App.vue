@@ -14,11 +14,12 @@
         <div class="header-text">
           <h1 class="header-title">{{ title }}</h1>
         </div>
-      </div>
+      </div>      
     </header>
-
+    <Navigation />
     <!-- Основной контент -->
     <main class="app-main">
+
       <router-view v-slot="{ Component }">
         <transition name="fade" mode="out-in">
           <component :is="Component" />
@@ -29,8 +30,13 @@
 </template>
 
 <script>
+  import Navigation from './components/Navigation.vue'
+
   export default {
     name: 'AppHeader',
+    components: {
+      Navigation
+    },
     props: {      
       // Свойство для текста
       title: {

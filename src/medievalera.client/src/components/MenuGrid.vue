@@ -20,7 +20,7 @@
             <p class="menu-description">{{ item.description }}</p>
           </div>
         </button>
-      </div>      
+      </div>
     </div>
   </div>
 </template>
@@ -46,6 +46,13 @@ export default {
     return {
       menuItems: [
       {
+        id: 1,
+        title: "Играть",
+        icon: "🕹️",
+        description: "Начать игру",
+        actionType: "game"
+      },
+      {
         id :1,
         title : "Профиль",
         icon : "👤",
@@ -56,21 +63,21 @@ export default {
         id : 2,
         title : "Настройки игры",
         icon : "⚙️",
-        description : "Управление профилем",
+        description : "Настройки игрового процесса",
         actionType : "settings"
       },
       {
         id : 3,
         title : "Правила",
         icon : "🔔",
-        description : "Управление профилем",
+        description : "Правила игры",
         actionType : "rules"
       },
       {
         id : 4,
         title : "Результаты",
         icon : "📊",
-        description : "Управление профилем",
+        description : "Результаты предыдущих игр",
         actionType : "results"
       }
       ],
@@ -116,20 +123,20 @@ export default {
 
   @media (min-width: 768px) {
     .menu-grid {
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(1, 1fr);
     }
   }
 
   @media (min-width: 1200px) {
     .menu-grid {
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(1, 1fr);
     }
   }
 
   .menu-item {
     background: linear-gradient(145deg, #6a11cb 0%, #2575fc 100%);
     border-radius: 20px;
-    padding: 30px 25px;
+    padding: 10px 105px;
     text-align: center;
     cursor: pointer;
     transition: all 0.3s ease;
