@@ -1,10 +1,11 @@
 <template>
-  <nav v-if="showNavigation" class="navigation-panel">
+  <nav class="navigation-panel">
     <!-- Кнопка назад -->
     <button class="nav-btn back-btn"
             @click="goBack"
             :disabled="!canGoBack"
-            title="Назад">
+            title="Назад"
+            v-if="showNavigation">
       <span class="btn-icon">←</span>
       <span class="btn-text">Назад</span>
     </button>
@@ -226,11 +227,12 @@
     align-items: center;
     justify-content: space-between;
     padding: 12px 20px;
-    background: linear-gradient(to right, rgba(101, 67, 33, 0.95), rgba(139, 69, 19, 0.95));
-    border-top: 2px solid #8B4513;
-    border-bottom: 3px solid #A0522D;
+    border: var(--era-border);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
     min-height: 60px;
+    width: 100%;
+    margin-bottom: 10px;
+    border-radius: 10px;    
   }
 
   /* Кнопка назад */
@@ -239,7 +241,7 @@
     align-items: center;
     gap: 8px;
     padding: 10px 20px;
-    background: rgba(210, 180, 140, 0.3);
+    background: var(--sky-grey);
     border: 2px solid #D2B48C;
     border-radius: 6px;
     color: #FFF8DC;
@@ -296,11 +298,11 @@
     border-radius: 4px;
     transition: all 0.2s ease;
     white-space: nowrap;
-    background: rgba(160, 82, 45, 0.3);
+    background: var(--sky-grey);
   }
 
     .breadcrumb-link:hover {
-      background: rgba(160, 82, 45, 0.6);
+      background: var(--sky-grey);      
       color: #FFF8DC;
       text-shadow: 0 0 8px rgba(255, 255, 220, 0.5);
     }
@@ -309,9 +311,9 @@
     color: #FFF8DC;
     font-weight: bold;
     padding: 5px 12px;
-    background: rgba(139, 69, 19, 0.8);
+    background: var(--sky-grey);
     border-radius: 4px;
-    border: 1px solid #A0522D;
+    border: 1px solid var(--era-yellow);
     white-space: nowrap;
   }
 

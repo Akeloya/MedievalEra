@@ -18,7 +18,23 @@
   --vt-c-text-light-1: var(--vt-c-indigo);
   --vt-c-text-light-2: rgba(60, 60, 60, 0.66);
   --vt-c-text-dark-1: var(--vt-c-white);
-  --vt-c-text-dark-2: rgba(235, 235, 235, 0.64);
+  --vt-c-text-dark-2: rgba(235, 235, 235, 0.64);  
+}
+
+:root {
+  --era-border: border: 1px solid #d4c8b5;
+  /* Акцентные цвета коробки */
+  --era-orange: #f39200;
+  --era-yellow: #ffcb05;
+  /* Цвета окружения (фон) */
+  --medieval-green: #4b6330; /* Поля */
+  --river-blue: #5d7a8c; /* Река */
+  --sky-grey: #b5b8a3; /* Облачное небо */
+  /* Текстурные цвета */
+  --stone-grey: #7a7a7a; /* Стены крепости */
+  --wood-brown: #6d4c41; /* Хижины */
+  /* Шрифты */
+  --font-main: 'MedievalSharp', cursive; /* Стилизованный под средневековье */
 }
 
 /* semantic color variables for this project */

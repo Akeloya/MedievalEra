@@ -60,8 +60,8 @@
   .medieval-era-app {
     font-family: 'Georgia', 'Times New Roman', serif;
     width: 95vw; /* 90% от ширины viewport */
-    max-width: 1200px; /* Ограничение для больших экранов */
-    min-height: 95vh; /* 90% от высоты viewport */
+    height: 95vh;
+    max-width: 1200px; /* Ограничение для больших экранов */    
     margin: 0 auto; /* Центрирование по горизонтали */
     padding: 20px;
     display: flex;
@@ -73,8 +73,8 @@
   /* Стили для шапки */
   .app-header {
     border-radius: 10px;
-    padding: 25px;
-    margin-bottom: 30px;
+    padding: 15px;
+    margin-bottom: 10px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
     border: 1px solid #5d6d7e;
     width: 100%; /* Занимает всю ширину родителя */
@@ -96,8 +96,8 @@
   }
 
   .header-icon-img {
-    width: 125px;
-    height: 125px;
+    width: 50px;
+    height: 50px;
     object-fit: cover;
     box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
     transition: transform 0.3s ease;
@@ -141,9 +141,9 @@
   /* Адаптивность для мобильных устройств */
   @media (max-width: 768px) {
     .medieval-era-app {
-      width: 90vw;
+      width: 95vw;
       padding: 15px;
-      min-height: 90vh;
+      min-height: 95vh;
     }
 
     .app-header {

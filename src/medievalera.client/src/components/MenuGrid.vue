@@ -17,7 +17,6 @@
           <div class="menu-content">
             <span class="menu-icon">{{ item.icon }}</span>
             <h3 class="menu-title">{{ item.title }}</h3>
-            <p class="menu-description">{{ item.description }}</p>
           </div>
         </button>
       </div>
@@ -134,7 +133,7 @@ export default {
   }
 
   .menu-item {
-    background: linear-gradient(145deg, #6a11cb 0%, #2575fc 100%);
+    background: linear-gradient( to bottom, color-mix(in srgb, var(--era-yellow), transparent 30%), color-mix(in srgb, var(--era-orange), transparent 30%) );
     border-radius: 20px;
     padding: 10px 105px;
     text-align: center;
@@ -154,7 +153,7 @@ export default {
       left: 0;
       right: 0;
       bottom: 0;
-      background: linear-gradient(145deg, #2575fc 0%, #6a11cb 100%);
+      background: linear-gradient(145deg, var(--era-yellow) 0%, var(--sky-grey) 100%);
       opacity: 0;
       transition: opacity 0.3s ease;
       border-radius: 20px;
@@ -177,6 +176,8 @@ export default {
   .menu-content {
     position: relative;
     z-index: 2;
+    display:flex;
+    align-items: center;
   }
 
   .menu-icon {
@@ -187,8 +188,7 @@ export default {
 
   .menu-title {
     font-size: 1.4rem;
-    font-weight: 600;
-    margin-bottom: 10px;
+    font-weight: 600;       
   }
 
   .menu-description {

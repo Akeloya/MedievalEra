@@ -19,8 +19,6 @@ namespace MedievalEra.Server
             // Add services to the container.
             builder.Services.AddControllers().AddJsonOptions(options =>
             {
-                options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-                // или с настройками:
                 options.JsonSerializerOptions.Converters.Add(
                     new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
             }); ;
