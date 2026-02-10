@@ -24,80 +24,28 @@
   </div>
 </template>
 
-<script>
+<script setup>
+  import { computed } from 'vue'
   import { useRouter } from 'vue-router'
 
   const router = useRouter()
 
-const goToResults = () => {
-  router.push('/results')
-}
+  const menuItems = computed(() => {
+      const currentRouteName = router.currentRoute.value.name
+    return router.options.routes
+      .filter(route => route.meta?.parent === currentRouteName)
+      .map(route => ({
+        id: route.name,
+        title: route.meta.title,
+        icon: route.meta.icon,
+        description: route.meta.description,
+        actionType: route.name
+      }))
+  })
 
-export default {
-  name: 'MenuGrid',
-  props: {
-    apiUrl: {
-      type: String,
-      default: 'menu/items'
-    }
-  },
-  data() {
-    return {
-      menuItems: [
-      {
-        id: 1,
-        title: "Играть",
-        icon: "🕹️",
-        description: "Начать игру",
-        actionType: "game"
-      },
-      {
-        id :1,
-        title : "Профиль",
-        icon : "👤",
-        description : "Управление профилем",
-        actionType : "profile"
-      },
-      {
-        id : 2,
-        title : "Настройки игры",
-        icon : "⚙️",
-        description : "Настройки игрового процесса",
-        actionType : "settings"
-      },
-      {
-        id : 3,
-        title : "Правила",
-        icon : "🔔",
-        description : "Правила игры",
-        actionType : "rules"
-      },
-      {
-        id : 4,
-        title : "Результаты",
-        icon : "📊",
-        description : "Результаты предыдущих игр",
-        actionType : "results"
-      }
-      ],
-      loading: false,
-      error: null,
-      currentMessage: ''
-    }
-  },  
-    async created() {    
-    },
-    watch: {
-      // call again the method if the route changes      
-    },
-  methods: {
-    handleMenuClick(item) {
-      this.$router.push(item.actionType)
-      
-      console.log(`Выполняется действие: ${item.actionType}`, item);
-    }
+  const handleMenuClick = (item) => {
+    router.push({ name: item.actionType })
   }
-}
 </script>
 
 <style scoped>

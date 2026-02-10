@@ -34,7 +34,7 @@
   --stone-grey: #7a7a7a; /* Стены крепости */
   --wood-brown: #6d4c41; /* Хижины */
   /* Шрифты */
-  --font-main: 'MedievalSharp', cursive; /* Стилизованный под средневековье */
+  --font-main: 'Georgia', 'Times New Roman', serif;
 }
 
 /* semantic color variables for this project */

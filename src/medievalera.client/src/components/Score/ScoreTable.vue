@@ -5,7 +5,7 @@
         <tr>
           <th class="header-empty"></th>
           <th class="header-empty"></th>
-          <th class="header-group">Игрок 1</th>
+          <th class="header-group">Игрок 1👑</th>
           <th class="header-group">Игрок 2</th>
           <th class="header-group">Игрок 3</th>
           <th class="header-group">Игрок 4</th>

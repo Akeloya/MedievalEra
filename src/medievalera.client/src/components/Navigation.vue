@@ -250,6 +250,7 @@
     transition: all 0.3s ease;
     min-width: 120px;
     justify-content: center;
+    font-family: var(--font-main);
   }
 
     .back-btn:hover:not(:disabled) {
@@ -265,7 +266,7 @@
     }
 
   .btn-icon {
-    font-size: 20px;
+    font-size: 10px;
     font-weight: bold;
   }
 

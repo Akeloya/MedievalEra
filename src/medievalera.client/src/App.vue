@@ -58,17 +58,17 @@
 </style>
 <style scoped>
   .medieval-era-app {
-    font-family: 'Georgia', 'Times New Roman', serif;
-    width: 95vw; /* 90% от ширины viewport */
+    font-family: var(--font-main);
+    width: 95vw;
     height: 95vh;
-    max-width: 1200px; /* Ограничение для больших экранов */    
+    max-width: 1200px; /* Ограничение для больших экранов */
     margin: 0 auto; /* Центрирование по горизонтали */
     padding: 20px;
     display: flex;
     flex-direction: column;
     justify-content: flex-start; /* Контент вверху */
     align-items: center; /* Центрирование содержимого */
-    box-sizing: border-box; /* Учитываем padding в ширине */    
+    box-sizing: border-box; /* Учитываем padding в ширине */
   }
   /* Стили для шапки */
   .app-header {
