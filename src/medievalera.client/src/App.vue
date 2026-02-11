@@ -37,8 +37,7 @@
     components: {
       Navigation
     },
-    props: {      
-      // Свойство для текста
+    props: {            
       title: {
         type: String,
         default: 'Эра средневековья'

@@ -35,7 +35,7 @@
       </div>
     </div>
 
-    <!-- Информация о текущем маршруте -->
+     <!--Информация о текущем маршруте--> 
     <div class="route-info" v-if="currentRouteMeta">
       <span class="route-icon" v-if="currentRouteMeta.icon">
         {{ currentRouteMeta.icon }}
@@ -47,178 +47,38 @@
   </nav>
 </template>
 
-<script>
-  import { ref, computed, watch } from 'vue'
-  import { useRoute, useRouter } from 'vue-router'
+<script setup>
+import { computed } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
-  export default {
-    name: 'Navigation',
+const route = useRoute()
+const router = useRouter()
 
-    setup() {
-      const route = useRoute()
-      const router = useRouter()
+const showNavigation = computed(() => route.path !== '/')
+const canGoBack = computed(()=> route.path !== '/')
 
-      // Храним историю посещений
-      const visitHistory = ref([])
+const currentRouteMeta = computed(() => {
+  // Находим все совпадения в иерархии
+  return route.matched.length > 0 ? route.matched.at(-1).meta : null
+});
 
-      // Флаг для показа навигации (скрываем на главной странице)
-      const showNavigation = computed(() => {
-        return route.path !== '/' && route.meta.showNavigation !== false
-      })
+const breadcrumbs = computed(() => {
+  // Находим все совпадения в иерархии
+  return route.matched.map(m => ({
+    path: m.path || '/',
+    title: m.meta.breadcrumb || m.meta.title
+  })).filter(c => c.title)
+})
 
-      // Можем ли идти назад
-      const canGoBack = computed(() => {
-        return visitHistory.value.length > 1
-      })
-
-      // Мета-данные текущего маршрута
-      const currentRouteMeta = computed(() => {
-        return route.meta || {}
-      })
-
-      // Строим хлебные крошки
-      const breadcrumbs = computed(() => {
-        const crumbs = []
-
-        // Начинаем с текущего маршрута
-        let current = route
-
-        while (current) {
-          // Добавляем крошку, если у маршрута есть название
-          if (current.meta?.breadcrumb || current.meta?.title) {
-            crumbs.unshift({
-              path: current.path,
-              title: current.meta.breadcrumb || current.meta.title,
-              name: current.name
-            })
-          }
-
-          // Если у маршрута есть родительский маршрут в метаданных
-          if (current.meta?.parent) {
-            // Ищем родительский маршрут в истории или в роутах
-            const parentInHistory = visitHistory.value.find(
-              visit => visit.name === current.meta.parent
-            )
-
-            if (parentInHistory) {
-              current = {
-                path: parentInHistory.path,
-                meta: {
-                  breadcrumb: parentInHistory.meta?.breadcrumb || parentInHistory.name,
-                  title: parentInHistory.meta?.title
-                }
-              }
-            } else {
-              // Если не нашли в истории, ищем в текущем маршруте
-              const matched = route.matched.find(
-                match => match.name === current.meta.parent
-              )
-
-              if (matched) {
-                current = {
-                  path: matched.path,
-                  meta: matched.meta
-                }
-              } else {
-                current = null
-              }
-            }
-          } else if (current.matched.length > 1) {
-            // Иначе берем родительский маршрут из matched
-            const parentIndex = current.matched.length - 2
-            if (parentIndex >= 0) {
-              const parent = current.matched[parentIndex]
-              current = {
-                path: parent.path,
-                meta: parent.meta
-              }
-            } else {
-              current = null
-            }
-          } else {
-            current = null
-          }
-        }
-
-        // Всегда добавляем главную страницу в начало
-        if (crumbs.length === 0 || crumbs[0].path !== '/') {
-          crumbs.unshift({
-            path: '/',
-            title: 'Главное меню',
-            name: 'home'
-          })
-        }
-
-        return crumbs
-      })
-
-      // Функция для перехода назад
-      const goBack = () => {
-        if (canGoBack.value) {
-          // Удаляем текущий маршрут из истории
-          visitHistory.value.pop()
-
-          // Получаем предыдущий маршрут
-          const previousRoute = visitHistory.value[visitHistory.value.length - 1]
-
-          // Переходим на предыдущий маршрут
-          router.push({
-            path: previousRoute.path,
-            query: previousRoute.query,
-            params: previousRoute.params
-          })
-        }
-      }
-
-      // Функция для добавления маршрута в историю
-      const addToHistory = (toRoute) => {
-        // Проверяем, не является ли этот маршрут уже последним в истории
-        const lastInHistory = visitHistory.value[visitHistory.value.length - 1]
-
-        if (!lastInHistory || lastInHistory.path !== toRoute.path) {
-          // Добавляем только если это не редирект на ту же страницу
-          visitHistory.value.push({
-            path: toRoute.path,
-            fullPath: toRoute.fullPath,
-            name: toRoute.name,
-            meta: toRoute.meta,
-            query: { ...toRoute.query },
-            params: { ...toRoute.params }
-          })
-
-          // Ограничиваем историю (например, последние 20 посещений)
-          if (visitHistory.value.length > 20) {
-            visitHistory.value = visitHistory.value.slice(-20)
-          }
-        }
-      }
-
-      // Следим за изменениями маршрута
-      watch(
-        () => ({
-          path: route.path,
-          fullPath: route.fullPath
-        }),
-        (newRoute, oldRoute) => {
-          if (newRoute.path !== oldRoute?.path) {
-            addToHistory(route)
-          }
-        },
-        { immediate: true }
-      )
-
-      // Инициализируем историю текущим маршрутом
-      addToHistory(route)
-
-      return {
-        showNavigation,
-        canGoBack,
-        currentRouteMeta,
-        breadcrumbs,
-        goBack
-      }
-    }
+const goBack = () => {
+  // Если есть куда идти по истории браузера - идем, иначе на уровень вверх
+  if (window.history.state?.back) {
+    router.back()
+  } else {
+    const parentPath = route.path.split('/').slice(0, -1).join('/') || '/'
+    router.push(parentPath)
   }
+}
 </script>
 
 <style scoped>

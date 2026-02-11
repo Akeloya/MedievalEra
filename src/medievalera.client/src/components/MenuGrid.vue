@@ -1,51 +1,48 @@
 <template>
-  <div class="menu-container">
-    <div v-if="loading" class="loading">
-      Загрузка меню...
-    </div>
-
-    <div v-else-if="error" class="error">
-      {{ error }}
-    </div>
-
-    <div v-else>
-      <div class="menu-grid">
-        <button v-for="item in menuItems"
-                :key="item.id"
-                class="menu-item"
-                @click="handleMenuClick(item)">
-          <div class="menu-content">
-            <span class="menu-icon">{{ item.icon }}</span>
-            <h3 class="menu-title">{{ item.title }}</h3>
-          </div>
-        </button>
-      </div>
+  <div class="menu-container">    
+    <div class="menu-grid">
+      <button v-for="item in menuItems"
+              :key="item.id"
+              class="menu-item"
+              @click="handleMenuClick(item)">
+        <div class="menu-content">
+          <span class="menu-icon">{{ item.icon }}</span>
+          <h3 class="menu-title">{{ item.title }}</h3>
+        </div>
+      </button>
     </div>
   </div>
 </template>
 
 <script setup>
-  import { computed } from 'vue'
-  import { useRouter } from 'vue-router'
+import { computed } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 
-  const router = useRouter()
+const router = useRouter()
+const route = useRoute()
 
-  const menuItems = computed(() => {
-      const currentRouteName = router.currentRoute.value.name
-    return router.options.routes
-      .filter(route => route.meta?.parent === currentRouteName)
-      .map(route => ({
-        id: route.name,
-        title: route.meta.title,
-        icon: route.meta.icon,
-        description: route.meta.description,
-        actionType: route.name
-      }))
-  })
+const menuItems = computed(() => {
+  // 1. Находим текущий активный уровень в matched
+  // Нам нужен последний элемент, у которого есть children
+  const currentRecord = route.matched[route.matched.length - 1]
 
-  const handleMenuClick = (item) => {
-    router.push({ name: item.actionType })
-  }
+  if (!currentRecord || !currentRecord.children) return []
+
+  // 2. Формируем пункты меню из детей текущего маршрута
+  return currentRecord.children
+    .filter(child => child.meta && child.name) // Берем только именованные роуты с метой
+    .map(child => ({
+      id: child.name,
+      title: child.meta.title || child.name,
+      icon: child.meta.icon || '📍',
+      description: child.meta.description || '',
+      actionType: child.name
+    }))
+})
+
+const handleMenuClick = (item) => {
+  router.push({ name: item.actionType })
+}
 </script>
 
 <style scoped>

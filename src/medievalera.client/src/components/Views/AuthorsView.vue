@@ -1,11 +1,9 @@
 <template>
   <div class="credits-container">
-    <!-- Шапка в рамке -->
     <div class="credits-header">
       <h1>НАД ОРИГИНАЛЬНОЙ ИГРОЙ РАБОТАЛИ</h1>
     </div>
 
-    <!-- Таблица авторов -->
     <table class="credits-table">
       <tbody>
         <tr v-for="(member, index) in team" :key="index">
@@ -40,7 +38,7 @@
     align-items: center;
     font-family: var(--font-main);
     color: #ffffff;
-    background-color: #1a1a1a; /* Темный фон для игрового стиля */
+    background-color: #1a1a1a;
     padding: 40px;    
   }
 
@@ -61,16 +59,15 @@
     border-collapse: collapse;
     width: 100%;
     max-width: 600px;
-    border: none; /* Убираем границы таблицы */
+    border: none;
   }
 
     .credits-table td {
       padding: 12px 20px;
       font-size: 1.1rem;
-      border: none; /* Убираем границы ячеек */
+      border: none;
     }
 
-  /* Первая колонка: жирный шрифт и выравнивание по правому краю для стиля */
   .role {
     font-weight: bold;
     text-align: right;
@@ -79,13 +76,11 @@
     color: #cccccc;
   }
 
-  /* Вторая колонка: обычный шрифт и выравнивание по левому краю */
   .name {
     text-align: left;
     width: 50%;
   }
 
-  /* Небольшая адаптивность для мобильных экранов */
   @media (max-width: 600px) {
     .credits-table td {
       font-size: 0.9rem;
