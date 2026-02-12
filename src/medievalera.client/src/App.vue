@@ -170,19 +170,18 @@
     }
   }
 
-  @media (max-width: 480px) {
+  @media (max-width: 640px) {
     .medieval-era-app {
-      width: 90vw;
-      padding: 10px;
+      padding: 5px;
     }
 
     .header-icon-img {
-      width: 100px;
-      height: 100px;
+      width: 50px;
+      height: 50px;
     }
 
     .header-title {
-      font-size: 1.8rem;
+      font-size: 2rem;
     }
 
     .app-main {
@@ -190,15 +189,38 @@
     }
   }
 
-  /* Для очень маленьких экранов */
-  @media (max-width: 360px) {
-    .header-title {
-      font-size: 1.5rem;
+  @media (max-width: 480px) {
+    .medieval-era-app {
+      padding: 5px;
     }
 
     .header-icon-img {
-      width: 85px;
-      height: 85px;
+      width: 50px;
+      height: 50px;
+    }
+
+    .header-title {
+      font-size: 1.2rem;
+    }
+
+    .app-main {
+      padding: 10px;
+    }
+  }
+
+  /* Для очень маленьких экранов */
+  @media (max-width: 360px) {
+    .medieval-era-app {
+      width: 100vw;
+      padding: 5px;
+    }
+    .header-title {
+      font-size: 1rem;
+    }
+
+    .header-icon-img {
+      width: 25px;
+      height: 25px;
     }
   }
 </style>

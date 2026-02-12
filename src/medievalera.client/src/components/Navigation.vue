@@ -218,8 +218,8 @@ const goBack = () => {
     }
 
     .breadcrumbs {
-      max-width: 100%;
-      order: 3;
+      max-width: 80%;
+      order: 2;
       margin-top: 10px;
     }
 
@@ -228,7 +228,7 @@ const goBack = () => {
     }
 
     .route-info {
-      order: 2;
+      order: 3;
     }
   }
 
@@ -243,18 +243,25 @@ const goBack = () => {
       font-size: 12px;
     }
 
-    .back-btn {
-      min-width: 100px;
-      padding: 8px 12px;
-    }
-
     .route-info {
       min-width: 80px;
       padding: 6px 10px;
+      order: 3;
     }
 
-    .route-description {
-      display: none; /* Скрываем описание на мобильных */
+    .breadcrumbs {
+      max-width: 80%;
+      margin-top: 10px;      
+    }
+  }
+
+  @media(max-width: 640px){
+    .breadcrumbs {
+      display: none;
+    }
+
+    .back-btn{
+        display: block;
     }
   }
 </style>
