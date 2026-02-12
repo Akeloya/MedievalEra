@@ -8,3 +8,7 @@ Accept: application/json
 ###
 GET {{MedievalEra.Server_HostAddress}}/dice
 Accept: application/json
+
+###
+GET {{MedievalEra.Server_HostAddress}}/dice/GetStarterKit
+Accept: application/json

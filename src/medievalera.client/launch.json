@@ -1,0 +1,7 @@
+{
+  "name": "Launch Vue.js",
+  "type": "chrome",
+  "request": "launch",
+  "url": "http://localhost:5173",
+  "webRoot": "${workspaceFolder}/ClientApp"
+}

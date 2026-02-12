@@ -18,6 +18,12 @@ namespace MedievalEra.Server.Controllers
         }
 
         [HttpGet]
+        public IActionResult Get()
+        {
+            return Ok(new { message = "работает!", timestamp = DateTime.Now });
+        }
+
+        [HttpGet("StarterKit")]
         public IEnumerable<IDice> GetStarterKit()
         {
             return _diceFactory.GetStarterKit();
