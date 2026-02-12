@@ -1,226 +1,363 @@
-<!-- components/DiceCard.vue -->
+<!-- components/RollPanel.vue -->
 <template>
-    <div class="dice-card"
-         :style="{ borderColor: dice.color }"
-         :class="{ frozen: isFrozen }">
-        <div class="dice-header">
-            <div class="dice-type" :style="{ backgroundColor: dice.color }">
-                {{ dice.name || dice.diceType }}
-            </div>
-            <div class="dice-actions">
-                <button v-if="canFreeze && dice.currentFace"
-                        @click="$emit('freeze')"
-                        class="btn-freeze"
-                        title="Заморозить">
-                    ❄️
-                </button>
-                <button v-if="canUnfreeze"
-                        @click="$emit('unfreeze')"
-                        class="btn-unfreeze"
-                        title="Разморозить">
-                    🔥
-                </button>
-                <button v-if="dice.diceType === 3 && dice.currentFace && hasNewRoll"
-                        @click="$emit('bind-new-roll')"
-                        class="btn-bind"
-                        title="Привязать NewRoll">
-                    ⚡
-                </button>
-            </div>
-        </div>
+  <div class="roll-panel">
+    <div class="roll-info">
+      <div class="remaining-rolls">
+        Осталось бросков: <strong>{{ remainingRerolls }}</strong>
+      </div>
 
-        <!-- Отображение выпавшей грани -->
-        <div v-if="dice.currentFace" class="dice-face">
-            <div class="face-label">Выпало:</div>
-            <div class="resources">
-                <div v-for="(value, resource) in dice.currentFace.values"
-                     :key="resource"
-                     class="resource-item"
-                     :class="getResourceClass(resource)">
-                    {{ resource }}: {{ value }}
-                </div>
-                <div v-if="dice.currentFace.choose" class="choose-badge">
-                    Выбор
-                </div>
+      <div v-if="hasExtraRolls" class="extra-rolls">
+        <h4>✨ Дополнительные броски (NewRoll)</h4>
+        <div class="pairs-list">
+          <div v-for="pair in unusedPairs"
+               :key="pair.id || pair.clergyId"
+               class="pair-item">
+            <div class="pair-info">
+              <span class="pair-label">Кубик Духовенства</span>
+              <button @click="$emit('perform-extra-roll', pair.clergyId)"
+                      class="btn-extra"
+                      :title="'Сделать дополнительный бросок'">
+                🎲 Бросить еще раз
+              </button>
             </div>
+          </div>
         </div>
-
-        <div v-else class="not-rolled">
-            Не брошен
-        </div>
+        <p v-if="unusedPairs.length === 0" class="no-pairs">
+          Нет доступных дополнительных бросков
+        </p>
+      </div>
     </div>
+
+    <div class="roll-actions">
+      <button v-if="!isRollingComplete"
+              @click="$emit('roll-dice')"
+              :disabled="!canReroll"
+              class="btn-roll"
+              :class="{ 'btn-roll-warning': rerollCount === maxRerolls - 1 }">
+        <span class="btn-icon">🎲</span>
+        {{ rollButtonText }}
+      </button>
+
+      <button v-if="!isRollingComplete && !canReroll && rerollCount >= maxRerolls"
+              @click="$emit('complete-turn')"
+              class="btn-complete">
+        <span class="btn-icon">⏹️</span>
+        Завершить ход
+      </button>
+
+      <button @click="$emit('add-dice')"
+              class="btn-add">
+        <span class="btn-icon">➕</span>
+        Получить кубик
+      </button>
+    </div>
+  </div>
 </template>
 
 <script setup>
-    import { computed } from 'vue';
+  import { computed } from 'vue';
 
-    const props = defineProps({
-        dice: {
-            type: Object,
-            required: true
-        },
-        isFrozen: {
-            type: Boolean,
-            default: false
-        },
-        canFreeze: {
-            type: Boolean,
-            default: false
-        },
-        canUnfreeze: {
-            type: Boolean,
-            default: false
-        }
-    });
-
-    defineEmits(['freeze', 'unfreeze', 'bind-new-roll']);
-
-    const hasNewRoll = computed(() => {
-        return props.dice.currentFace?.values?.['NewRoll'] > 0;
-    });
-
-    function getResourceClass(resource) {
-        const classes = {
-            'resource': true,
-            [`resource-${resource.toLowerCase()}`]: true
-        };
-        return classes;
+  const props = defineProps({
+    canReroll: {
+      type: Boolean,
+      required: true
+    },
+    isRollingComplete: {
+      type: Boolean,
+      required: true
+    },
+    newRollPairs: {
+      type: Array,
+      default: () => []
+    },
+    remainingRerolls: {
+      type: Number,
+      default: 3
+    },
+    rerollCount: {
+      type: Number,
+      default: 0
+    },
+    maxRerolls: {
+      type: Number,
+      default: 3
     }
+  });
+
+  defineEmits(['roll-dice', 'complete-turn', 'add-dice', 'perform-extra-roll']);
+
+  // Неиспользованные пары для дополнительных бросков
+  const unusedPairs = computed(() => {
+    return props.newRollPairs.filter(pair => !pair.isUsed);
+  });
+
+  // Есть ли доступные дополнительные броски
+  const hasExtraRolls = computed(() => {
+    return unusedPairs.value.length > 0;
+  });
+
+  // Текст кнопки броска
+  const rollButtonText = computed(() => {
+    if (!props.canReroll) return 'Нет доступных бросков';
+    if (props.remainingRerolls === 1) return '🎲 Последний бросок!';
+    return `Бросить кубики (${props.remainingRerolls})`;
+  });
 </script>
 
 <style scoped>
-    .dice-card {
-        background: white;
-        border: 3px solid #ddd;
-        border-radius: 12px;
-        padding: 16px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        transition: all 0.3s ease;
+  .roll-panel {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    margin-top: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+
+  .roll-info {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    flex: 1;
+  }
+
+  .remaining-rolls {
+    font-size: 18px;
+    color: #2c3e50;
+    background: #f8f9fa;
+    padding: 12px 20px;
+    border-radius: 12px;
+    display: inline-block;
+  }
+
+    .remaining-rolls strong {
+      color: #667eea;
+      font-size: 24px;
+      margin-left: 8px;
     }
 
-        .dice-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-        }
+  .extra-rolls {
+    background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+    padding: 20px;
+    border-radius: 12px;
+    border-left: 6px solid #9b59b6;
+  }
 
-        .dice-card.frozen {
-            opacity: 0.9;
-            background: #f8f9fa;
-            border-style: dashed;
-        }
-
-    .dice-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 12px;
+    .extra-rolls h4 {
+      margin: 0 0 16px 0;
+      font-size: 16px;
+      color: #4a148c;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
 
-    .dice-type {
-        padding: 4px 12px;
-        border-radius: 20px;
-        color: white;
-        font-size: 14px;
-        font-weight: bold;
+      .extra-rolls h4::before {
+        content: '⚡';
+        font-size: 20px;
+      }
+
+  .pairs-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .pair-item {
+    background: white;
+    padding: 12px 16px;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+  }
+
+    .pair-item:hover {
+      transform: translateX(4px);
+      box-shadow: 0 4px 8px rgba(155, 89, 182, 0.2);
     }
 
-    .dice-actions {
-        display: flex;
-        gap: 8px;
+  .pair-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .pair-label {
+    font-size: 14px;
+    color: #666;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+    .pair-label::before {
+      content: '🎲';
+      font-size: 16px;
     }
 
-    .btn-freeze, .btn-unfreeze, .btn-bind {
-        border: none;
-        background: none;
-        font-size: 18px;
-        cursor: pointer;
-        padding: 4px;
-        transition: transform 0.2s;
+  .btn-extra {
+    background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.3s ease;
+  }
+
+    .btn-extra:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 12px rgba(155, 89, 182, 0.4);
     }
 
-        .btn-freeze:hover, .btn-unfreeze:hover, .btn-bind:hover {
-            transform: scale(1.2);
-        }
-
-    .dice-face {
-        border-top: 1px solid #eee;
-        padding-top: 12px;
+    .btn-extra:active {
+      transform: scale(0.98);
     }
 
-    .face-label {
-        font-size: 12px;
-        color: #666;
-        margin-bottom: 8px;
+  .no-pairs {
+    color: #666;
+    font-style: italic;
+    margin: 8px 0 0 0;
+    font-size: 14px;
+  }
+
+  .roll-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .btn-roll, .btn-complete, .btn-add {
+    border: none;
+    padding: 14px 28px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+  }
+
+  .btn-icon {
+    font-size: 20px;
+  }
+
+  .btn-roll {
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+  }
+
+    .btn-roll:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(40, 167, 69, 0.4);
     }
 
-    .resources {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 8px;
+  .btn-roll-warning {
+    background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+    box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
+    animation: pulse 1.5s infinite;
+  }
+
+  .btn-roll:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .btn-complete {
+    background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+    color: #2c3e50;
+    box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
+  }
+
+    .btn-complete:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(255, 193, 7, 0.4);
     }
 
-    .resource-item {
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-size: 12px;
-        font-weight: bold;
-        color: white;
+  .btn-add {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    color: white;
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+  }
+
+    .btn-add:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0, 123, 255, 0.4);
     }
 
-    .resource-goods {
-        background: #28a745;
+  @keyframes pulse {
+    0% {
+      box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
     }
 
-    .resource-stone {
-        background: #6c757d;
+    50% {
+      box-shadow: 0 8px 20px rgba(255, 193, 7, 0.6);
     }
 
-    .resource-wood {
-        background: #fd7e14;
+    100% {
+      box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
+    }
+  }
+
+  /* Адаптивность */
+  @media (max-width: 768px) {
+    .roll-panel {
+      flex-direction: column;
+      padding: 20px;
     }
 
-    .resource-meal {
-        background: #dc3545;
+    .roll-info {
+      width: 100%;
     }
 
-    .resource-skull {
-        background: #343a40;
+    .roll-actions {
+      width: 100%;
+      justify-content: stretch;
     }
 
-    .resource-culture {
-        background: #007bff;
+    .btn-roll, .btn-complete, .btn-add {
+      flex: 1;
+      justify-content: center;
+      padding: 12px 20px;
+      font-size: 14px;
     }
 
-    .resource-attack {
-        background: #ffc107;
-        color: black;
+    .pair-info {
+      flex-direction: column;
+      align-items: flex-start;
     }
 
-    .resource-defence {
-        background: #17a2b8;
+    .btn-extra {
+      width: 100%;
+      justify-content: center;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .roll-actions {
+      flex-direction: column;
     }
 
-    .resource-building {
-        background: #20c997;
+    .btn-roll, .btn-complete, .btn-add {
+      width: 100%;
     }
-
-    .resource-newroll {
-        background: #6610f2;
-    }
-
-    .choose-badge {
-        background: #ffc107;
-        color: black;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-size: 12px;
-        font-weight: bold;
-    }
-
-    .not-rolled {
-        color: #999;
-        font-style: italic;
-        text-align: center;
-        padding: 20px 0;
-    }
+  }
 </style>

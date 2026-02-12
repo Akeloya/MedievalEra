@@ -28,7 +28,7 @@
   const emit = defineEmits(['start-game']);
   const name = ref('');
 
-  function handleSubmit() {
+  function handleSubmit() {    
     if (name.value.trim()) {
       emit('start-game', name.value.trim());
     }

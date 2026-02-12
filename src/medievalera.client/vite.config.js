@@ -35,24 +35,24 @@ if (!fs.existsSync(certFilePath) || !fs.existsSync(keyFilePath)) {
 }
 
 const target = env.ASPNETCORE_HTTPS_PORT ? `https://localhost:${env.ASPNETCORE_HTTPS_PORT}` :
-    env.ASPNETCORE_URLS ? env.ASPNETCORE_URLS.split(';')[0] : 'https://localhost:7275';
+  env.ASPNETCORE_URLS ? env.ASPNETCORE_URLS.split(';')[0] : 'https://localhost:7275';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-    plugins: [plugin()],
-    resolve: {
-        alias: {
-            '@': fileURLToPath(new URL('./src', import.meta.url))
-        }
-    },
+  plugins: [plugin()],
+  resolve: {
+    alias: {
+      '@': fileURLToPath(new URL('./src', import.meta.url))
+    }
+  },
   server: {
-    proxy: {      
+    proxy: {
       // Все запросы, начинающиеся с /api, полетят на бэкенд
       '^/api': {
         target,
         secure: false,
-        // Отрезаем /api из пути: /api/menu превратится в /menu
-        rewrite: (path) => path.replace(/^\/api/, '')        
+        rewrite: (path) => path.replace(/^\/api/, ''),
+        changeOrigin: true
       },
     },
     port: parseInt(env.DEV_SERVER_PORT || '54768'),
