@@ -1,9 +1,6 @@
-// services/diceApi.js
-const API_BASE_URL = "http://localhost:5071"; // Настройте под ваш базовый URL
-
 class DiceApiService {
     constructor() {
-        this.baseUrl = API_BASE_URL;
+        this.baseUrl = '/api/';
     }
 
     // Базовый метод для fetch запросов
@@ -50,7 +47,7 @@ class DiceApiService {
     // Получить стартовый набор кубиков
     async getStarterKit() {
         try {
-          const data = await this.request('/dice/starterkit');
+          const data = await this.request('dice/starterkit');
             return data;
         } catch (error) {
             console.error("Failed to fetch starter kit:", error);
@@ -71,7 +68,7 @@ class DiceApiService {
                 type: type.toString()
             });
 
-            const data = await this.request(`/get?${params}`);
+            const data = await this.request(`dice/get?${params}`);
             return data;
         } catch (error) {
             console.error(`Failed to fetch dice type ${type}:`, error);
@@ -82,7 +79,7 @@ class DiceApiService {
     // Дополнительный метод для проверки доступности API
     async checkHealth() {
         try {
-            const response = await fetch(`${this.baseUrl}/health`, {
+            const response = await fetch(`${this.baseUrl}`, {
                 method: "HEAD",
                 credentials: "same-origin"
             });
