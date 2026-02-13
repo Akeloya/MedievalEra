@@ -21,6 +21,7 @@
         <DiceCollection title="Активные кубики"
                         :dice-collection="store.unlockedDice"
                         :is-frozen="false"
+                        :isRollingComplete="store.isRollingComplete"
                         @freeze-dice="freezeDice"
                         @bind-new-roll="openBindingModal" />
 
@@ -28,6 +29,7 @@
         <DiceCollection title="Замороженные кубики"
                         :dice-collection="store.frozenDice"
                         :is-frozen="true"
+                        :isRollingComplete="store.isRollingComplete"
                         @unfreeze-dice="unfreezeDice" />
       </div>
 

@@ -39,5 +39,17 @@ namespace MedievalEra.Server.Controllers
             _logger.LogTrace("Entered into GetDice");
             return _diceFactory.GetDice(type);
         }
+
+        /// <summary>
+        /// Для простого броска кубика хватит и этого
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        [HttpGet("roll")]
+        public IDiceFace Roll(DiceType type)
+        {
+            _logger.LogTrace("Entered into Roll");
+            return _diceFactory.GetDice(type).Roll();
+        }
     }
 }

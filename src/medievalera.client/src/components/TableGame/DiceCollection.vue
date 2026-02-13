@@ -17,6 +17,7 @@
                       :is-frozen="isFrozen"
                       :can-freeze="!isFrozen"
                       :can-unfreeze="isFrozen"
+                      :isRollingComplete="isRollingComplete"
                       @freeze="$emit('freeze-dice', dice)"
                       @unfreeze="$emit('unfreeze-dice', dice)"
                       @bind-new-roll="$emit('bind-new-roll', dice)" />
@@ -39,7 +40,11 @@
         isFrozen: {
             type: Boolean,
             default: false
-        }
+      },
+      isRollingComplete: {
+        type: Boolean,
+        default: false
+      }
     });
 
     defineEmits(['freeze-dice', 'unfreeze-dice', 'bind-new-roll']);
