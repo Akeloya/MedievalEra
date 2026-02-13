@@ -1,10 +1,14 @@
 <template>
-  <div>Game view</div>
+    <DiceGame />
 </template>
 <script lang="js">
-  import { defineComponent } from 'vue';
+    import { defineComponent } from 'vue';
+    import DiceGame from '@/components/TableGame/DiceGame.vue'
 
-  export default defineComponent({
+    export default defineComponent({
+        components: {
+            DiceGame
+        },
         data() {
             return {
                 loading: false,

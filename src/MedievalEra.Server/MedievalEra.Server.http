@@ -1,5 +1,4 @@
-GET {{MedievalEra.Server_HostAddress}}/weatherforecast/
-Accept: application/json
+@MedievalEra.Server_HostAddress = http://localhost:5071
 
 ###
 GET {{MedievalEra.Server_HostAddress}}/menu/items
@@ -7,4 +6,8 @@ Accept: application/json
 
 ###
 GET {{MedievalEra.Server_HostAddress}}/dice
+Accept: application/json
+
+###
+GET {{MedievalEra.Server_HostAddress}}/dice/starterKit
 Accept: application/json

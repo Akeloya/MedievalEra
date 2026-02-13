@@ -35,6 +35,9 @@ namespace MedievalEra.Server
 
             var app = builder.Build();
 
+            app.UseDefaultFiles();
+            app.MapStaticAssets();
+
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
@@ -43,10 +46,8 @@ namespace MedievalEra.Server
 
             app.UseHttpsRedirection();
 
-            app.UseDefaultFiles();
-            app.MapStaticAssets();
             app.UseRouting();
-            //app.UseAuthorization();
+            app.UseAuthorization();
             
             app.MapControllers();
 
