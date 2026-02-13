@@ -1,26 +1,19 @@
+import { Dice } from './Dice';
+
 class DiceApiService {
     constructor() {
         this.baseUrl = '/api/';
     }
 
     // Базовый метод для fetch запросов
-    async request(endpoint, options = {}) {
+    async request(endpoint) {
         const url = `${this.baseUrl}${endpoint}`;
-        console.log(`Making API request to: ${url} with options:`, options);
+        console.log(`Making API request to: ${url}`);
       const defaultOptions = {
           method: 'GET',
             headers: {
                 'Content-Type': "application/json"
             }
-        };
-
-        const fetchOptions = {
-            ...defaultOptions,
-            ...options,
-            headers: {
-                ...defaultOptions.headers,
-                ...options.headers,
-            },
         };
 
         try {
@@ -48,7 +41,7 @@ class DiceApiService {
     async getStarterKit() {
         try {
           const data = await this.request('dice/starterkit');
-            return data;
+          return Array.isArray(data) ? data.map(diceData => new Dice(diceData)) : [];
         } catch (error) {
             console.error("Failed to fetch starter kit:", error);
             throw new Error("Не удалось получить стартовый набор кубиков");
@@ -69,26 +62,25 @@ class DiceApiService {
             });
 
             const data = await this.request(`dice/get?${params}`);
-            return data;
+            return new Dice(data);
         } catch (error) {
             console.error(`Failed to fetch dice type ${type}:`, error);
             throw new Error(`Не удалось получить кубик типа ${type}`);
         }
     }
 
-    // Дополнительный метод для проверки доступности API
-    async checkHealth() {
-        try {
-            const response = await fetch(`${this.baseUrl}`, {
-                method: "HEAD",
-                credentials: "same-origin"
-            });
-            return response.ok;
-        } catch (error) {
-            console.error("API health check failed:", error);
-            return false;
-        }
+  // Дополнительный метод для броска кубика (если бросок должен быть на сервере)
+  async rollDiceOnServer(diceId) {
+    try {
+      const data = await this.request(`/roll/${diceId}`, {
+        method: 'GET'
+      });
+      return data;
+    } catch (error) {
+      console.error(`Failed to roll dice ${diceId}:`, error);
+      throw error;
     }
+  }
 }
 
 // Создаем и экспортируем единственный экземпляр

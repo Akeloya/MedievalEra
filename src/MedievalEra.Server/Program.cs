@@ -33,16 +33,6 @@ namespace MedievalEra.Server
 
             builder.Services.AddDbContext<AppDbContext>(ServiceLifetime.Scoped);
 
-            builder.Services.AddCors(options =>
-            {
-                options.AddPolicy("SPA",
-                    policy =>
-                    {
-                        policy.WithOrigins("https://localhost:54768") // Адрес вашего SPA
-                              .AllowAnyHeader()
-                              .AllowAnyMethod();
-                    });
-            });
             var app = builder.Build();
 
             app.UseDefaultFiles();
@@ -57,7 +47,6 @@ namespace MedievalEra.Server
             app.UseHttpsRedirection();
 
             app.UseRouting();
-            app.UseCors("SPA");
             app.UseAuthorization();
             
             app.MapControllers();

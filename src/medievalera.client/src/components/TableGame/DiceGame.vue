@@ -30,6 +30,7 @@
                         :dice-collection="store.frozenDice"
                         :is-frozen="true"
                         :isRollingComplete="store.isRollingComplete"
+                        :can-reroll="store.canReroll"
                         @unfreeze-dice="unfreezeDice" />
       </div>
 
@@ -54,6 +55,7 @@
       <BindNewRollModal v-if="showBindingModal"
                         :clergy-dice="selectedClergyDice"
                         :frozen-dice="store.frozenDice"
+                        :can-reroll="store.canReroll"
                         @bind="handleBindNewRoll"
                         @close="showBindingModal = false" />
     </div>

@@ -18,6 +18,7 @@
                       :can-freeze="!isFrozen"
                       :can-unfreeze="isFrozen"
                       :isRollingComplete="isRollingComplete"
+                      :can-reroll="canReroll"
                       @freeze="$emit('freeze-dice', dice)"
                       @unfreeze="$emit('unfreeze-dice', dice)"
                       @bind-new-roll="$emit('bind-new-roll', dice)" />
@@ -44,6 +45,10 @@
       isRollingComplete: {
         type: Boolean,
         default: false
+      },
+      canReroll: {
+        type: Boolean,
+        default: true
       }
     });
 

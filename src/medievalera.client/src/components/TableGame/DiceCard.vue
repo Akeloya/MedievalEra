@@ -2,9 +2,6 @@
 <template>
   <div class="roll-panel">
     <div class="roll-info">
-      <div class="remaining-rolls">
-        Осталось бросков: {{ remainingRerolls }}
-      </div>
 
       <div v-if="newRollPairs.length > 0" class="extra-rolls">
         <h4>Дополнительные броски (NewRoll)</h4>
@@ -32,12 +29,7 @@
               @click="$emit('complete-turn')"
               class="btn-complete">
         Завершить броски
-      </button>
-
-      <button @click="$emit('add-dice')"
-              class="btn-add">
-        + Получить кубик
-      </button>
+      </button>      
     </div>
   </div>
 </template>

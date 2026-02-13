@@ -4,6 +4,7 @@ import { ref, computed } from "vue";
 import diceApi from "./diceApi";
 import cookies from "js-cookie";
 import DiceResources from "./DiceResources";
+import { Dice } from './Dice';
 
 export const useGameStore = defineStore("game", () => {
   // Состояние
@@ -85,15 +86,15 @@ export const useGameStore = defineStore("game", () => {
   async function resetGame() {
     try {
       const starterKit = await diceApi.getStarterKit();
-      allDice.value = starterKit.map(dice => ({
-        ...dice,
-        id: generateDiceId(),
-        currentFace: null,
-        // Добавляем методы, если их нет
-        roll: dice.roll || (() => ({ values: {} })),
-        lock: dice.lock || (() => { }),
-        unlock: dice.unlock || (() => { })
-      }));
+
+      // Убеждаемся, что каждый кубик - экземпляр Dice
+      allDice.value = starterKit.map(dice => {
+        if (dice instanceof Dice) {
+          return dice;
+        }
+        return new Dice(dice);
+      });
+
       frozenDice.value = [];
       unlockedDice.value = [...allDice.value];
       rerollCount.value = 0;
@@ -109,42 +110,15 @@ export const useGameStore = defineStore("game", () => {
     }
   }
 
-  // Инициализация новой игры
-  async function initializeGame(name) {
-    playerName.value = name;
-    sessionId.value = generateSessionId();
-    await resetGame();
-    saveSessionToCookies();
-  }
-
-  // Сброс игры
-  async function resetGame() {
-    try {
-      const starterKit = await diceApi.getStarterKit();
-      allDice.value = starterKit;
-      frozenDice.value = [];
-      unlockedDice.value = [...starterKit];
-      rerollCount.value = 0;
-      isRollingComplete.value = false;
-      newRollPairs.value = [];
-      hasStarterKit.value = true;
-
-      // Увеличиваем счетчик ходов при полном сбросе
-      turnCount.value++;
-      saveSessionToCookies();
-    } catch (error) {
-      console.error("Failed to reset game:", error);
-      throw error;
-    }
-  }
-
   // Добавление кубика по типу
   async function addDiceByType(type) {
     try {
       const dice = await diceApi.getDiceByType(type);
-      allDice.value.push(dice);
-      unlockedDice.value.push(dice);
-      return dice;
+      // Убеждаемся, что это экземпляр Dice
+      const newDice = dice instanceof Dice ? dice : new Dice(dice);
+      allDice.value.push(newDice);
+      unlockedDice.value.push(newDice);
+      return newDice;
     } catch (error) {
       console.error(`Failed to get dice type ${type}:`, error);
       throw error;
@@ -154,21 +128,24 @@ export const useGameStore = defineStore("game", () => {
   // Бросок всех незамороженных кубиков
   async function rollDice() {
     if (!canReroll.value) {
-      throw new Error("No rerolls remaining");
+      throw new Error('Нет доступных бросков');
     }
+
+    console.log('Rolling dice:', unlockedDice.value.length);
 
     // Бросаем каждый незамороженный кубик
     unlockedDice.value.forEach(dice => {
-      dice.currentFace = dice.roll();
+      if (dice instanceof Dice) {
+        dice.currentFace = dice.roll();
+        console.log(`Dice ${dice.id} rolled:`, dice.currentFace);
 
-      // Проверяем на Skull
-      if (hasResource(dice.currentFace, DiceResources.Skull)) {
-        freezeDice(dice);
-      }
-
-      // Проверяем на NewRoll для кубиков Clergy
-      if (dice.diceType === 3 && hasResource(dice.currentFace, DiceResources.NewRoll)) {
-        // Будет обработано позже
+        // Проверяем на Skull
+        if (hasResource(dice.currentFace, DiceResources.Skull)) {
+          console.log(`Dice ${dice.id} has Skull, freezing`);
+          freezeDice(dice);
+        }
+      } else {
+        console.error('Invalid dice object:', dice);
       }
     });
 
@@ -178,14 +155,17 @@ export const useGameStore = defineStore("game", () => {
       await handleAfterLastRoll();
     }
   }
-
+     
   // Заморозка кубика
   function freezeDice(dice) {
     const index = unlockedDice.value.findIndex(d => d.id === dice.id);
     if (index !== -1) {
-      dice.lock(dice.currentFace);
+      if (dice instanceof Dice) {
+        dice.lock(dice.currentFace);
+      }
       unlockedDice.value.splice(index, 1);
       frozenDice.value.push(dice);
+      console.log(`Dice ${dice.id} frozen`);
     }
   }
 
@@ -193,25 +173,33 @@ export const useGameStore = defineStore("game", () => {
   function unfreezeDice(dice) {
     const index = frozenDice.value.findIndex(d => d.id === dice.id);
     if (index !== -1) {
-      dice.unlock();
+      if (dice instanceof Dice) {
+        dice.unlock();
+      }
       frozenDice.value.splice(index, 1);
       unlockedDice.value.push(dice);
+      console.log(`Dice ${dice.id} unfrozen`);
     }
   }
-
   // Обработка после последнего броска
   async function handleAfterLastRoll() {
+    console.log('After last roll handling');
+
     // Обрабатываем кубики Clergy с NewRoll
     const clergyWithNewRoll = unlockedDice.value.filter(dice =>
       dice.diceType === 3 &&
       dice.currentFace &&
-      hasResource(dice.currentFace, DiceResources.NewRoll)
+      hasResource(dice.currentFace, DiceResource.NewRoll)
     );
 
     if (clergyWithNewRoll.length > 0) {
+      console.log(`Found ${clergyWithNewRoll.length} clergy dice with NewRoll`);
       // Замораживаем обычные кубики
-      frozenDice.value = [...frozenDice.value, ...unlockedDice.value.filter(d => d.diceType !== 3)];
-      unlockedDice.value = unlockedDice.value.filter(d => d.diceType === 3);
+      unlockedDice.value.forEach(dice => {
+        if (dice.diceType !== 3) {
+          freezeDice(dice);
+        }
+      });
     } else {
       // Если нет NewRoll, завершаем ход
       completeTurn();
@@ -225,7 +213,7 @@ export const useGameStore = defineStore("game", () => {
       return;
     }
 
-    if (!hasResource(clergyDice.currentFace, DiceResources.NewRoll)) {
+    if (!hasResource(clergyDice.currentFace, DiceResource.NewRoll)) {
       console.error('Clergy dice does not have NewRoll');
       return;
     }
@@ -253,39 +241,67 @@ export const useGameStore = defineStore("game", () => {
 
     // Размораживаем выбранный кубик
     unfreezeDice(lockedDice);
+
+    console.log('NewRoll pair created:', pair);
   }
 
   // Дополнительный бросок с NewRoll
   function performExtraRoll(pairId) {
-    const pair = newRollPairs.value.find(p =>
-      !p.isUsed && p.clergyId === pairId
+    const pairIndex = newRollPairs.value.findIndex(p =>
+      !p.isUsed && (p.clergyId === pairId || p.id === pairId)
     );
 
-    if (pair) {
-      const clergyDice = allDice.value.find(d => d.id === pair.clergyId);
-      const lockedDice = allDice.value.find(d => d.id === pair.lockedId);
+    if (pairIndex === -1) {
+      console.error('Pair not found or already used');
+      return;
+    }
 
-      // Перебрасываем оба кубика
+    const pair = newRollPairs.value[pairIndex];
+    const clergyDice = allDice.value.find(d => d.id === pair.clergyId);
+    const lockedDice = allDice.value.find(d => d.id === pair.lockedId);
+
+    if (!clergyDice || !lockedDice) {
+      console.error('Dice not found');
+      return;
+    }
+
+    // Перебрасываем оба кубика
+    if (clergyDice instanceof Dice) {
       clergyDice.currentFace = clergyDice.roll();
+    }
+    if (lockedDice instanceof Dice) {
       lockedDice.currentFace = lockedDice.roll();
+    }
 
-      pair.isUsed = true;
+    pair.isUsed = true;
 
-      // Проверяем результат
-      if (!hasResource(clergyDice.currentFace, DiceResources.NewRoll)) {
-        // Если NewRoll не выпал, пара замораживается
-        freezeDice(clergyDice);
-        freezeDice(lockedDice);
+    console.log('Extra roll performed:', {
+      clergy: clergyDice.currentFace,
+      locked: lockedDice.currentFace
+    });
+
+    // Проверяем результат
+    if (hasResource(clergyDice.currentFace, DiceResource.NewRoll)) {
+      // Если NewRoll выпал снова, кубик остается в unlocked для повторной привязки
+      if (!unlockedDice.value.find(d => d.id === clergyDice.id)) {
+        unlockedDice.value.push(clergyDice);
       }
-      // Если выпал - можно привязать снова
+    } else {
+      // Если NewRoll не выпал, пара замораживается
+      freezeDice(clergyDice);
+      freezeDice(lockedDice);
+      // Удаляем использованную пару
+      newRollPairs.value.splice(pairIndex, 1);
     }
   }
 
   // Завершение хода
   function completeTurn() {
+    console.log('Completing turn');
+
     // Замораживаем все оставшиеся кубики
     unlockedDice.value.forEach(dice => {
-      if (dice.currentFace) {
+      if (dice instanceof Dice && dice.currentFace) {
         dice.lock(dice.currentFace);
       }
     });
@@ -298,17 +314,23 @@ export const useGameStore = defineStore("game", () => {
     turnCount.value++;
     rerollCount.value = 0;
     saveSessionToCookies();
+
+    console.log('Turn completed');
   }
 
   // Начать новый ход
   async function startNewTurn() {
+    console.log('Starting new turn');
+
     if (!hasStarterKit.value) {
       await resetGame();
     } else {
       // Сбрасываем состояние для нового хода
       allDice.value.forEach(dice => {
-        dice.unlock();
-        dice.currentFace = null;
+        if (dice instanceof Dice) {
+          dice.unlock();
+          dice.currentFace = null;
+        }
       });
 
       frozenDice.value = [];
@@ -321,7 +343,6 @@ export const useGameStore = defineStore("game", () => {
       saveSessionToCookies();
     }
   }
-
   // Вспомогательные функции
   function generateSessionId() {
     return "session_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
