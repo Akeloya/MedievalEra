@@ -14,7 +14,13 @@
                   :is-rolling-complete="store.isRollingComplete"
                   @reset-game="confirmReset"
                   @new-turn="startNewTurn" />
-
+      <div class="game-sidebar">
+        <ResourceCounter :frozen-dice="store.frozenDice"
+                         :unlocked-dice="store.unlockedDice"
+                         :is-rolling-complete="store.isRollingComplete"
+                         :is-turn-completed="store.isTurnCompleted"
+                         @complete-turn="completeTurn" />
+      </div>
       <!-- Коллекции кубиков -->
       <div class="dice-collections">
         <!-- Активные кубики -->
@@ -58,6 +64,7 @@
                         :can-reroll="store.canReroll"
                         @bind="handleBindNewRoll"
                         @close="showBindingModal = false" />
+
     </div>
   </div>
 </template>
@@ -71,6 +78,7 @@
   import RollPanel from './RollPanel.vue';
   import AddDiceModal from './AddDiceModal.vue';
   import BindNewRollModal from './BindNewRollModal.vue';
+  import ResourceCounter from './ResourceCounter.vue';
 
   const store = useGameStore();
   const showAddDiceModal = ref(false);
@@ -179,30 +187,33 @@
       alert('Не удалось привязать NewRoll.');
     }
   }
+
 </script>
 
 <style scoped>
-  .dice-game {
-    min-height: 100vh;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    padding: 20px;
-  }
-
   .game-container {
-    max-width: 1400px;
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 20px;
+    max-width: 1700px;
     margin: 0 auto;
   }
 
   .dice-collections {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    margin: 20px 0;
+    grid-column: 1;
   }
 
-  @media (max-width: 768px) {
-    .dice-collections {
+  .game-sidebar {
+    grid-column: 2;
+  }
+
+  @media (max-width: 1200px) {
+    .game-container {
       grid-template-columns: 1fr;
+    }
+
+    .game-sidebar {
+      grid-column: 1;
     }
   }
 </style>

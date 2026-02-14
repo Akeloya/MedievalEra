@@ -20,6 +20,7 @@ export const useGameStore = defineStore("game", () => {
   const newRollPairs = ref([]);
   const isRollingComplete = ref(false);
   const diceIdCounter = ref(0);
+  const isTurnCompleted = ref(false);
 
   // Геттеры
   const canReroll = computed(() => {
@@ -67,12 +68,6 @@ export const useGameStore = defineStore("game", () => {
     turnCount.value = 0;
   }
 
-  // Генерация ID для кубика
-  function generateDiceId() {
-    diceIdCounter.value++;
-    return `dice_${Date.now()}_${diceIdCounter.value}`;
-  }
-
   // Инициализация новой игры
   async function initializeGame(name) {
     playerName.value = name;
@@ -102,7 +97,8 @@ export const useGameStore = defineStore("game", () => {
       newRollPairs.value = [];
       hasStarterKit.value = true;
 
-      turnCount.value++;
+      turnCount.value = 0;
+      isTurnCompleted.value = false;
       saveSessionToCookies();
     } catch (error) {
       console.error('Failed to reset game:', error);
@@ -189,7 +185,7 @@ export const useGameStore = defineStore("game", () => {
     const clergyWithNewRoll = unlockedDice.value.filter(dice =>
       dice.diceType === 3 &&
       dice.currentFace &&
-      hasResource(dice.currentFace, DiceResource.NewRoll)
+      hasResource(dice.currentFace, DiceResources.NewRoll)
     );
 
     if (clergyWithNewRoll.length > 0) {
@@ -213,7 +209,7 @@ export const useGameStore = defineStore("game", () => {
       return;
     }
 
-    if (!hasResource(clergyDice.currentFace, DiceResource.NewRoll)) {
+    if (!hasResource(clergyDice.currentFace, DiceResources.NewRoll)) {
       console.error('Clergy dice does not have NewRoll');
       return;
     }
@@ -281,7 +277,7 @@ export const useGameStore = defineStore("game", () => {
     });
 
     // Проверяем результат
-    if (hasResource(clergyDice.currentFace, DiceResource.NewRoll)) {
+    if (hasResource(clergyDice.currentFace, DiceResources.NewRoll)) {
       // Если NewRoll выпал снова, кубик остается в unlocked для повторной привязки
       if (!unlockedDice.value.find(d => d.id === clergyDice.id)) {
         unlockedDice.value.push(clergyDice);
@@ -297,6 +293,10 @@ export const useGameStore = defineStore("game", () => {
 
   // Завершение хода
   function completeTurn() {
+    if (isTurnCompleted.value) {
+      console.log('Turn already completed');
+      return;
+    }
     console.log('Completing turn');
 
     // Замораживаем все оставшиеся кубики
@@ -314,12 +314,13 @@ export const useGameStore = defineStore("game", () => {
     turnCount.value++;
     rerollCount.value = 0;
     saveSessionToCookies();
-
+    isTurnCompleted.value = true;
     console.log('Turn completed');
   }
 
   // Начать новый ход
   async function startNewTurn() {
+    isTurnCompleted.value = false;
     console.log('Starting new turn');
 
     if (!hasStarterKit.value) {
@@ -365,6 +366,7 @@ export const useGameStore = defineStore("game", () => {
     hasStarterKit,
     newRollPairs,
     isRollingComplete,
+    isTurnCompleted,
 
     // Геттеры
     canReroll,
