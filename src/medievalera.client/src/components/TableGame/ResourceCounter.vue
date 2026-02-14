@@ -17,13 +17,13 @@
       <div class="warning-text">
         <strong>Требуется выбор:</strong>
         <span v-for="dice in pendingChoices" :key="dice.id" class="pending-dice">
-          Кубик {{ getDiceName(dice) }}
+          Кубик {{ dice.name }}
         </span>
       </div>
     </div>
 
     <!-- Подсчет ресурсов -->
-    <div class="resources-grid">
+    <div class="resources-grid" v-else>
       <div v-for="(count, resource) in resourceTotals"
            :key="resource"
            class="resource-row"
@@ -60,14 +60,16 @@
 
 <script setup>
   import { computed } from 'vue';
+  import {Dice} from './Dice'
+
 
   const props = defineProps({
     frozenDice: {
-      type: Array,
+      type: Dice[0],
       required: true
     },
     unlockedDice: {
-      type: Array,
+      type: Dice[0],
       required: true
     },
     isRollingComplete: {
@@ -118,17 +120,6 @@
   // Получить название ресурса
   function getResourceName(resource) {
     return resourceNames[resource] || resource;
-  }
-
-  // Получить имя кубика для подсказки
-  function getDiceName(dice) {
-    const names = {
-      1: 'Крестьянин',
-      2: 'Горожанин',
-      3: 'Духовенство',
-      4: 'Знать'
-    };
-    return names[dice.diceType] || 'Кубик';
   }
 
   // Найти кубики с невыбранными ресурсами (choose: true)

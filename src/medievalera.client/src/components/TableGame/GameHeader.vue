@@ -1,42 +1,45 @@
 <!-- components/GameHeader.vue -->
 <template>
-    <div class="game-header">
-        <div class="player-info">
-            <h1>Игрок: {{ playerName }}</h1>
-            <div class="stats">
-                <div class="stat-item">
-                    <span class="stat-label">Ход:</span>
-                    <span class="stat-value">{{ turnCount }}</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Бросков:</span>
-                    <span class="stat-value">{{ rerollCount }}/{{ maxRerolls }}</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Осталось:</span>
-                    <span class="stat-value">{{ remainingRerolls }}</span>
-                </div>
-                <div v-if="isRollingComplete" class="stat-item turn-complete">
-                    <span class="stat-label">Статус:</span>
-                    <span class="stat-value">Ход завершен</span>
-                </div>
-            </div>
-        </div>
-
-        <div class="header-actions">
-            <button @click="$emit('new-turn')"
-                    class="btn-new-turn"
-                    :disabled="!isRollingComplete && rerollCount === 0"
-                    :title="getNewTurnTooltip">
-                <span class="btn-icon">🎲</span>
-                Новый ход
-            </button>
-            <button @click="$emit('reset-game')" class="btn-reset">
-                <span class="btn-icon">🔄</span>
-                Сброс игры
-            </button>
-        </div>
+  <div class="game-header">
+    <div class="header-container">
+      <h1>Игрок: {{ playerName }}</h1>
+      <div v-if="isRollingComplete" class="stat-item turn-complete">
+        <span class="stat-label">Статус:</span>
+        <span class="stat-value">Ход завершен</span>
+      </div>
     </div>
+    <div class="player-info">
+      <div class="stats">
+        <div class="stat-item">
+          <span class="stat-label">Ход:</span>
+          <span class="stat-value">{{ turnCount }}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Бросков:</span>
+          <span class="stat-value">{{ rerollCount }}/{{ maxRerolls }}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Осталось:</span>
+          <span class="stat-value">{{ remainingRerolls }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button @click="$emit('new-turn')"
+              class="btn-new-turn"
+              :disabled="!isRollingComplete && rerollCount === 0"
+              :title="getNewTurnTooltip">
+        <span class="btn-icon">🎲</span>
+        Новый ход
+      </button>
+      <button @click="$emit('reset-game')" class="btn-reset">
+        <span class="btn-icon">🔄</span>
+        Сброс игры
+      </button>
+    </div>
+    <slot></slot>
+  </div>
 </template>
 
 <script setup>
@@ -111,12 +114,12 @@
         flex: 1;
     }
 
-        .player-info h1 {
-            margin: 0 0 12px 0;
-            font-size: 28px;
-            color: #333;
-            font-weight: 600;
-        }
+    .player-info h1 {
+        margin: 0 0 12px 0;
+        font-size: 28px;
+        color: #333;
+        font-weight: 600;
+    }
 
     .stats {
         display: flex;
@@ -148,7 +151,7 @@
     }
 
     .turn-complete {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);        
     }
 
         .turn-complete .stat-label,
@@ -180,32 +183,38 @@
         box-shadow: 0 4px 6px rgba(40, 167, 69, 0.2);
     }
 
-        .btn-new-turn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(40, 167, 69, 0.3);
-        }
+    .btn-new-turn:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(40, 167, 69, 0.3);
+    }
 
-        .btn-new-turn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
+    .btn-new-turn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+    }
 
     .btn-reset {
         background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
         box-shadow: 0 4px 6px rgba(220, 53, 69, 0.2);
     }
 
-        .btn-reset:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(220, 53, 69, 0.3);
-        }
+    .btn-reset:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(220, 53, 69, 0.3);
+    }
 
     .btn-icon {
         font-size: 18px;
     }
 
+    .header-container {
+      display: flex; /* Выстраиваем элементы в ряд */
+      justify-content: space-between; /* Первый влево, второй вправо */
+      align-items: center; /* Центрируем по вертикали, если высота разная */
+      width: 100%;
+    }
     /* Адаптивность */
     @media (max-width: 768px) {
         .game-header {

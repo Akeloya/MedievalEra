@@ -41,12 +41,16 @@ console.log(`Proxying API requests to: ${target}`);
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [plugin()],
+  build: {
+    sourcemap: true, // Генерировать карты кода при сборке
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
   },
   server: {
+    sourcemapIgnoreList: false,
     proxy: {
       // Все запросы, начинающиеся с /api, полетят на бэкенд
       '^/api': {

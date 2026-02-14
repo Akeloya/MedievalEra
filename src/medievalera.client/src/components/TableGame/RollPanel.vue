@@ -2,10 +2,6 @@
 <template>
   <div class="roll-panel">
     <div class="roll-info">
-      <div class="remaining-rolls">
-        Осталось бросков: <strong>{{ remainingRerolls }}</strong>
-      </div>
-
       <div v-if="hasExtraRolls" class="extra-rolls">
         <h4>✨ Дополнительные броски (NewRoll)</h4>
         <div class="pairs-list">

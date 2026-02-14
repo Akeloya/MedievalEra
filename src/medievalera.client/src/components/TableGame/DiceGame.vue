@@ -13,7 +13,19 @@
                   :remaining-rerolls="store.remainingRerolls"
                   :is-rolling-complete="store.isRollingComplete"
                   @reset-game="confirmReset"
-                  @new-turn="startNewTurn" />
+                  @new-turn="startNewTurn">
+        <!-- Панель бросков -->
+        <RollPanel :can-reroll="store.canReroll"
+                   :is-rolling-complete="store.isRollingComplete"
+                   :new-roll-pairs="store.newRollPairs"
+                   :remaining-rerolls="store.remainingRerolls"
+                   :reroll-count="store.rerollCount"
+                   :max-rerolls="store.maxRerolls"
+                   @roll-dice="rollDice"
+                   @complete-turn="completeTurn"
+                   @perform-extra-roll="performExtraRoll"
+                   @add-dice="showAddDiceModal = true" />
+      </GameHeader>
       <div class="game-sidebar">
         <ResourceCounter :frozen-dice="store.frozenDice"
                          :unlocked-dice="store.unlockedDice"
@@ -40,17 +52,7 @@
                         @unfreeze-dice="unfreezeDice" />
       </div>
 
-      <!-- Панель бросков -->
-      <RollPanel :can-reroll="store.canReroll"
-                 :is-rolling-complete="store.isRollingComplete"
-                 :new-roll-pairs="store.newRollPairs"
-                 :remaining-rerolls="store.remainingRerolls"
-                 :reroll-count="store.rerollCount"
-                 :max-rerolls="store.maxRerolls"
-                 @roll-dice="rollDice"
-                 @complete-turn="completeTurn"
-                 @perform-extra-roll="performExtraRoll"
-                 @add-dice="showAddDiceModal = true" />
+      
 
       <!-- Модальное окно добавления кубика -->
       <AddDiceModal v-if="showAddDiceModal"
@@ -71,7 +73,7 @@
 
 <script setup>
   import { ref, onMounted } from 'vue';
-  import { useGameStore } from './gameStore';
+  import { useGameStore } from './GameStore';
   import PlayerNameModal from './PlayerNameModal.vue';
   import GameHeader from './GameHeader.vue';
   import DiceCollection from './DiceCollection.vue';
@@ -200,7 +202,7 @@
   }
 
   .dice-collections {
-    grid-column: 1;
+    grid-column: 1 / -1;
   }
 
   .game-sidebar {
