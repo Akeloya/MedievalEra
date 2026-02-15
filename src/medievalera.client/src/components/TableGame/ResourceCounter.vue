@@ -160,7 +160,15 @@
       // Если есть choose, но выбор не сделан - не учитываем
     });
 
-    return totals;
+    const sortedResult = {};
+    Object.keys(resourceNames).forEach(key => {
+      // Если в посчитанных итогах есть этот ресурс, добавляем его в объект
+      if (totals[key] !== undefined && totals[key] > 0) {
+        sortedResult[key] = totals[key];
+      }
+    });
+
+    return sortedResult;
   });
 
   // Можно ли завершить ход
