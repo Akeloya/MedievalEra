@@ -89,7 +89,7 @@ export const useGameStore = defineStore("game", () => {
         }
         return new Dice(dice);
       });
-
+      
       frozenDice.value = [];
       unlockedDice.value = [...allDice.value];
       rerollCount.value = 0;
@@ -132,14 +132,11 @@ export const useGameStore = defineStore("game", () => {
     // Бросаем каждый незамороженный кубик
     unlockedDice.value.forEach(dice => {
       if (dice instanceof Dice) {
+
         dice.currentFace = dice.roll();
         console.log(`Dice ${dice.id} rolled:`, dice.currentFace);
 
-        // Проверяем на Skull
-        if (hasResource(dice.currentFace, DiceResources.Skull)) {
-          console.log(`Dice ${dice.id} has Skull, freezing`);
-          freezeDice(dice);
-        }
+        moveToFreezed(dice);
       } else {
         console.error('Invalid dice object:', dice);
       }
@@ -163,6 +160,19 @@ export const useGameStore = defineStore("game", () => {
       frozenDice.value.push(dice);
       console.log(`Dice ${dice.id} frozen`);
     }
+  }
+
+  function moveToFreezed(dice) {
+    const index = unlockedDice.value.findIndex(d => d.id === dice.id);
+    if (index === -1 || !(dice instanceof Dice))
+      return;
+
+    if (dice.canBeUnlocked)
+      return;
+      
+    unlockedDice.value.splice(index, 1);
+    frozenDice.value.push(dice);
+    console.log(`Dice ${dice.id} frozen because of skull`);    
   }
 
   // Разморозка кубика
@@ -329,6 +339,7 @@ export const useGameStore = defineStore("game", () => {
       // Сбрасываем состояние для нового хода
       allDice.value.forEach(dice => {
         if (dice instanceof Dice) {
+          dice.prepareForRoll();
           dice.unlock();
           dice.currentFace = null;
         }

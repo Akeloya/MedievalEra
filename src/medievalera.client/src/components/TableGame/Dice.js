@@ -8,9 +8,16 @@ export class Dice {
     this.faces = diceData.faces || [];
     this.currentFace = null;
     this.isLocked = false;
-
+    this.canBeLocked = false;
+    this.canBeUnlocked = true;
     // Сохраняем оригинальные данные для API
     this._originalData = diceData;
+  }
+
+  prepareForRoll() {
+    this.canBeLocked = false;
+    this.isLocked = false;
+    this.canBeUnlocked = true;
   }
 
   // Бросок кубика
@@ -18,11 +25,20 @@ export class Dice {
     if (this.isLocked) {
       return this.currentFace;
     }
-
+    
     // Если есть faces, выбираем случайную грань
     if (this.faces && this.faces.length > 0) {
       const randomIndex = Math.floor(Math.random() * this.faces.length);
+      this.canBeLocked = true;
       this.currentFace = this.faces[randomIndex];
+
+      if (this.currentFace.values.skull) {
+        this.isLocked = true;
+        this.canBeUnlocked = false;
+        this.canBeLocked = false;
+        console.log(`${this.diceType} was locked`)
+      }
+
       return this.currentFace;
     }
 
@@ -33,6 +49,9 @@ export class Dice {
 
   // Заблокировать кубик
   lock(face) {
+    if (!this.canBeLocked)
+      return;
+
     this.isLocked = true;
     if (face) {
       this.currentFace = face;
@@ -41,6 +60,8 @@ export class Dice {
 
   // Разблокировать кубик
   unlock() {
+    if (!this.canBeUnlocked)
+      return;
     this.isLocked = false;
   }
 
@@ -66,6 +87,7 @@ export class Dice {
     clone.id = this.id;
     clone.currentFace = this.currentFace ? { ...this.currentFace } : null;
     clone.isLocked = this.isLocked;
+    clone.canBeLocked = this.canBeLocked;
     return clone;
   }
 }

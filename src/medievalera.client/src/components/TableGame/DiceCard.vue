@@ -95,10 +95,6 @@
     canBindNewRoll: {
       type: Boolean,
       default: false
-    },
-    showActions: {
-      type: Boolean,
-      default: true
     }
   });
 
@@ -120,6 +116,7 @@
     'NewRoll': '🖋️'
   };
 
+  const showActions = computed(() => props.dice.canBeLocked);
   // Определяем текущую грань
   const currentFace = computed(() => {
     return props.dice.currentFace || (props.dice.faces && props.dice.faces[0]);
