@@ -127,7 +127,7 @@ export const useGameStore = defineStore("game", () => {
       throw new Error('Нет доступных бросков');
     }
 
-    console.log('Rolling dice:', unlockedDice.value.length);
+    console.log('***************** Rolling dice:', unlockedDice.value.length);
 
     // Бросаем каждый незамороженный кубик
     unlockedDice.value.forEach(dice => {
@@ -141,7 +141,7 @@ export const useGameStore = defineStore("game", () => {
         console.error('Invalid dice object:', dice);
       }
     });
-
+    console.log('***************** Rolling dice finished');
     rerollCount.value++;
 
     if (rerollCount.value === maxRerolls) {

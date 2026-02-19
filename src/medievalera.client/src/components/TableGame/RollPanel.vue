@@ -42,7 +42,8 @@
       </button>
 
       <button @click="$emit('add-dice')"
-              class="btn-add">
+              class="btn-add"
+              v-if="isRollingComplete">
         <span class="btn-icon">➕</span>
         Получить кубик
       </button>

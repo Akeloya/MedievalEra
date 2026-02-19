@@ -65,7 +65,7 @@
       <button v-if="canBindNewRoll && hasNewRoll && !isFrozen"
               @click="$emit('bind-new-roll')"
               class="action-btn bind"
-              title="Использовать NewRoll">
+              title="Перебросить">
         ⚡
       </button>
     </div>
@@ -113,7 +113,7 @@
     'attack': '⚔️',
     'defence': '🛡️',
     'building': '🔨',
-    'NewRoll': '🖋️'
+    'newroll': '🖋️'
   };
 
   const showActions = computed(() => props.dice.canBeLocked);
@@ -157,7 +157,7 @@
 
   // Проверка на NewRoll
   const hasNewRoll = computed(() => {
-    return currentFace.value?.values?.['NewRoll'] > 0;
+    return currentFace.value?.values?.['newroll'] > 0;
   });
 
   // Определение класса расположения
