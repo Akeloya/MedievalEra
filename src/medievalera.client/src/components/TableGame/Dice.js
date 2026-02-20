@@ -28,7 +28,7 @@ export class Dice {
     }
     
     // Если есть faces, выбираем случайную грань
-    if (this.faces && this.faces.length > 0) {
+    if (this.faces && this.faces.length > 0) {      
       const randomIndex = Math.floor(Math.random() * this.faces.length) % 6;
       this.canBeLocked = true;
       this.currentFace = this.faces[randomIndex];
