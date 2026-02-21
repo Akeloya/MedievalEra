@@ -1,5 +1,4 @@
-﻿using MedievalEra.Server.Core.Game.Player;
-using MedievalEra.Server.Core.Settings;
+﻿using MedievalEra.Server.Core.Settings;
 using MedievalEra.Server.Core.Store.Entitites;
 
 using Microsoft.EntityFrameworkCore;
@@ -9,6 +8,7 @@ namespace MedievalEra.Server.Core.Store
     public class AppDbContext : DbContext
     {
         public DbSet<PlayerEntity> Players { get; set; }
+        public DbSet<GameScore> Scores { get; set; }
 
         private readonly DatabaseType _databaseType;
         private readonly string? _connectionString;
@@ -38,13 +38,13 @@ namespace MedievalEra.Server.Core.Store
                 switch (_databaseType)
                 {
                     case DatabaseType.Sqlite:
-                        var sqliteConnectionString = _connectionString ?? "Data Source=players.db";
+                        var sqliteConnectionString = _connectionString ?? "Data Source=EraMedieval.db";
                         optionsBuilder.UseSqlite(sqliteConnectionString,
                             options => options.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
                         break;
 
                     case DatabaseType.InMemory:
-                        var inMemoryName = _connectionString ?? "TestDatabase";
+                        var inMemoryName = _connectionString ?? "EraMedieval";
                         optionsBuilder.UseInMemoryDatabase(inMemoryName);
                         break;
 

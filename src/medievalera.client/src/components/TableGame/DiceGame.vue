@@ -81,6 +81,7 @@
   import AddDiceModal from './AddDiceModal.vue';
   import BindNewRollModal from './BindNewRollModal.vue';
   import ResourceCounter from './ResourceCounter.vue';
+  import { diceIcons } from './DiceResources';
 
   const store = useGameStore();
   const showAddDiceModal = ref(false);

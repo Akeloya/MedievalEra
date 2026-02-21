@@ -39,11 +39,6 @@
                :title="`${resource.type}: ${resource.count}`">
             {{ getIcon(resource.type) }}
           </div>
-
-          <!-- Счетчик если больше 4 иконок -->
-          <span v-if="resource.count > 4" class="resource-counter">
-            {{ resource.count }}
-          </span>
         </div>
       </template>
     </div>
@@ -74,6 +69,7 @@
 
 <script setup>
   import { computed, ref } from 'vue';
+  import { diceIcons } from './DiceResources';
 
   const props = defineProps({
     dice: {
@@ -102,20 +98,6 @@
 
   const selectedIndex = ref(null);
 
-  // Иконки ресурсов
-  const icons = {
-    'goods': '📦',
-    'stone': '⛰️',
-    'wood': '🌲',
-    'meal': '🌾',
-    'skull': '💀',
-    'culture': '📜',
-    'attack': '⚔️',
-    'defence': '🛡️',
-    'building': '🔨',
-    'newroll': '🖋️'
-  };
-
   const showActions = computed(() => props.dice.canBeLocked);
   // Определяем текущую грань
   const currentFace = computed(() => {
@@ -123,14 +105,8 @@
   });
 
   // Цвет кубика (фон всего кубика)
-  const diceColor = computed(() => {
-    const colors = {
-      1: '#8B4513', // Peasant - коричневый
-      2: '#4A90E2', // Citizen - синий
-      3: '#9B59B6', // Clergy - фиолетовый
-      4: '#F1C40F'  // Nobility - золотой
-    };
-    return props.dice.color || colors[props.dice.diceType] || '#95A5A6';
+  const diceColor = computed(() => {    
+    return props.dice.color || '#95A5A6';
   });
 
   // Форматирование ресурсов
@@ -171,7 +147,7 @@
 
   // Иконка для ресурса
   function getIcon(resource) {
-    return icons[resource] || '•';
+    return diceIcons[resource] || '•';
   }
 
 // Отслеживание выбранного ресурса

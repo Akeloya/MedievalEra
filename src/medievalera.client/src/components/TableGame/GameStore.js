@@ -3,7 +3,7 @@ import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 import diceApi from "./diceApi";
 import cookies from "js-cookie";
-import DiceResources from "./DiceResources";
+import { DiceResources } from "./DiceResources";
 import { Dice } from './Dice';
 
 export const useGameStore = defineStore("game", () => {
