@@ -1,5 +1,8 @@
 ﻿using MedievalEra.Server.Core.Settings;
 using MedievalEra.Server.Core.Store.Entitites;
+using GameScoreRecord = MedievalEra.Server.Core.Game.Scores.GameScore;
+using PlayerScoreRecord = MedievalEra.Server.Core.Game.Scores.PlayerScore;
+using BuildingScoreRecord = MedievalEra.Server.Core.Game.Scores.BuildingScore;
 
 using Microsoft.EntityFrameworkCore;
 
@@ -9,6 +12,9 @@ namespace MedievalEra.Server.Core.Store
     {
         public DbSet<PlayerEntity> Players { get; set; }
         public DbSet<GameScore> Scores { get; set; }
+        public DbSet<GameScoreRecord> GameScores { get; set; }
+        public DbSet<PlayerScoreRecord> PlayerScores { get; set; }
+        public DbSet<BuildingScoreRecord> BuildingScores { get; set; }
 
         private readonly DatabaseType _databaseType;
         private readonly string? _connectionString;
@@ -93,6 +99,35 @@ namespace MedievalEra.Server.Core.Store
                             v => v.HasValue ? DateTime.SpecifyKind(v.Value, DateTimeKind.Utc) : null);
                 }
             });
+
+            modelBuilder.Entity<GameScore>(entity =>
+            {
+                entity.HasKey(game => game.Id);
+                entity.OwnsMany(game => game.PlayerScores, players =>
+                {
+                    players.WithOwner().HasForeignKey("GameScoreId");
+                    players.Property<int>("PlayerScoreId").ValueGeneratedOnAdd();
+                    players.HasKey("GameScoreId", "PlayerScoreId");
+                    players.OwnsMany(player => player.BuildingScores, buildings =>
+                    {
+                        buildings.WithOwner().HasForeignKey("GameScoreId", "PlayerScoreId");
+                        buildings.Property<int>("BuildingScoreId").ValueGeneratedOnAdd();
+                        buildings.HasKey("GameScoreId", "PlayerScoreId", "BuildingScoreId");
+                    });
+                });
+            });
+
+            modelBuilder.Entity<GameScoreRecord>()
+                .HasMany(game => game.Players)
+                .WithOne(player => player.GameScore)
+                .HasForeignKey(player => player.GameScoreId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<PlayerScoreRecord>()
+                .HasMany(player => player.Buildings)
+                .WithOne(building => building.PlayerScore)
+                .HasForeignKey(building => building.PlayerScoreId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }
