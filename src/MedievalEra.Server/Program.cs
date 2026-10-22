@@ -12,7 +12,7 @@ namespace MedievalEra.Server
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -34,6 +34,12 @@ namespace MedievalEra.Server
             builder.Services.AddDbContext<AppDbContext>(ServiceLifetime.Scoped);
 
             var app = builder.Build();
+
+            await using (var scope = app.Services.CreateAsyncScope())
+            {
+                var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+                await dbContext.Database.EnsureCreatedAsync();
+            }
 
             app.UseDefaultFiles();
             app.MapStaticAssets();
