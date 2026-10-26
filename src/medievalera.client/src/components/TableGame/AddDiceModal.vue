@@ -22,10 +22,10 @@
 
 <script setup>
   const diceTypes = [
-    { value: 1, label: 'Peasant (Крестьянин)' },
-    { value: 2, label: 'Citizen (Горожанин)' },
-    { value: 3, label: 'Clergy (Духовенство)' },
-    { value: 4, label: 'Nobility (Знать)' }
+    { value: 1, label: 'Крестьянин' },
+    { value: 2, label: 'Горожанин' },
+    { value: 3, label: 'Духовенство' },
+    { value: 4, label: 'Знать' }
   ];
 
   defineEmits(['add-dice', 'close']);

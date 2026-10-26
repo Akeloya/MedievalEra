@@ -82,6 +82,17 @@ const routes = [
             }
           },
           {
+            path: "/profile",
+            name: "profile",
+            component: () => import("@/components/Views/ProfileView.vue"),
+            meta: {
+              title: "Профиль",
+              breadcrumb: "Профиль игрока",
+              icon: "👤",
+              description: "Вход и подтверждение результатов"
+            }
+          },
+          {
             path: "/rules",
             name: "rules",
             component: () => import("@/components/Views/RulesView.vue"),

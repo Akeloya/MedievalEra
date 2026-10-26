@@ -1,4 +1,4 @@
-const DiceResources = Object.freeze({
+export const DiceResources = Object.freeze({
   None : 0,
   Goods : 1,
   Stone : 2,
@@ -48,4 +48,16 @@ const DiceResources = Object.freeze({
   }
 });
 
-export default DiceResources;
+// Иконки ресурсов
+export const diceIcons = {
+  'goods': '📦',
+  'stone': '⛰️',
+  'wood': '🌲',
+  'meal': '🌾',
+  'skull': '💀',
+  'culture': '📜',
+  'attack': '⚔️',
+  'defence': '🛡️',
+  'building': '🔨',
+  'newroll': '🖋️'
+};

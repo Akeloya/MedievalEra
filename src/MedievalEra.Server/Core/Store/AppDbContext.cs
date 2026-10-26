@@ -1,6 +1,8 @@
-﻿using MedievalEra.Server.Core.Game.Player;
-using MedievalEra.Server.Core.Settings;
+﻿using MedievalEra.Server.Core.Settings;
 using MedievalEra.Server.Core.Store.Entitites;
+using GameScoreRecord = MedievalEra.Server.Core.Game.Scores.GameScore;
+using PlayerScoreRecord = MedievalEra.Server.Core.Game.Scores.PlayerScore;
+using BuildingScoreRecord = MedievalEra.Server.Core.Game.Scores.BuildingScore;
 
 using Microsoft.EntityFrameworkCore;
 
@@ -9,6 +11,10 @@ namespace MedievalEra.Server.Core.Store
     public class AppDbContext : DbContext
     {
         public DbSet<PlayerEntity> Players { get; set; }
+        public DbSet<GameScore> Scores { get; set; }
+        public DbSet<GameScoreRecord> GameScores { get; set; }
+        public DbSet<PlayerScoreRecord> PlayerScores { get; set; }
+        public DbSet<BuildingScoreRecord> BuildingScores { get; set; }
 
         private readonly DatabaseType _databaseType;
         private readonly string? _connectionString;
@@ -38,13 +44,13 @@ namespace MedievalEra.Server.Core.Store
                 switch (_databaseType)
                 {
                     case DatabaseType.Sqlite:
-                        var sqliteConnectionString = _connectionString ?? "Data Source=players.db";
+                        var sqliteConnectionString = _connectionString ?? "Data Source=EraMedieval.db";
                         optionsBuilder.UseSqlite(sqliteConnectionString,
                             options => options.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery));
                         break;
 
                     case DatabaseType.InMemory:
-                        var inMemoryName = _connectionString ?? "TestDatabase";
+                        var inMemoryName = _connectionString ?? "EraMedieval";
                         optionsBuilder.UseInMemoryDatabase(inMemoryName);
                         break;
 
@@ -71,13 +77,15 @@ namespace MedievalEra.Server.Core.Store
                 entity.HasKey(e => e.Id);
 
                 // Индексы для оптимизации запросов
-                entity.HasIndex(e => e.Name).IsUnique();
-
                 // Ограничения и валидация
                 entity.Property(e => e.Name)
                     .IsRequired()
                     .HasMaxLength(50)
-                    .IsUnicode(false);
+                    .IsUnicode(false)
+                    .UseCollation("NOCASE");
+                entity.Property(e => e.PasswordHash);
+                entity.HasIndex(e => e.Name)
+                    .HasDatabaseName("IX_Players_Name_NoCase");
 
                 // Для SQLite специфичные настройки
                 if (Database.IsSqlite())
@@ -93,6 +101,45 @@ namespace MedievalEra.Server.Core.Store
                             v => v.HasValue ? DateTime.SpecifyKind(v.Value, DateTimeKind.Utc) : null);
                 }
             });
+
+            modelBuilder.Entity<GameScore>(entity =>
+            {
+                entity.HasKey(game => game.Id);
+                entity.OwnsMany(game => game.PlayerScores, players =>
+                {
+                    players.WithOwner().HasForeignKey("GameScoreId");
+                    players.Property<int>("PlayerScoreId").ValueGeneratedOnAdd();
+                    players.HasKey("GameScoreId", "PlayerScoreId");
+                    players.OwnsMany(player => player.BuildingScores, buildings =>
+                    {
+                        buildings.WithOwner().HasForeignKey("GameScoreId", "PlayerScoreId");
+                        buildings.Property<int>("BuildingScoreId").ValueGeneratedOnAdd();
+                        buildings.HasKey("GameScoreId", "PlayerScoreId", "BuildingScoreId");
+                    });
+                });
+            });
+
+            modelBuilder.Entity<GameScoreRecord>()
+                .HasMany(game => game.Players)
+                .WithOne(player => player.GameScore)
+                .HasForeignKey(player => player.GameScoreId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<GameScoreRecord>()
+                .Property(game => game.GameType)
+                .HasConversion<int>();
+
+            modelBuilder.Entity<PlayerScoreRecord>()
+                .HasOne(player => player.PlayerEntity)
+                .WithMany()
+                .HasForeignKey(player => player.PlayerEntityId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<PlayerScoreRecord>()
+                .HasMany(player => player.Buildings)
+                .WithOne(building => building.PlayerScore)
+                .HasForeignKey(building => building.PlayerScoreId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }
