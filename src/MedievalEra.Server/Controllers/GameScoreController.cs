@@ -21,13 +21,19 @@ namespace MedievalEra.Server.Controllers
         [HttpPost]
         public async Task<IActionResult> Save([FromBody] GameScoreRequest request)
         {
+            if (!Enum.IsDefined(request.GameType))
+            {
+                return BadRequest("Неизвестный тип игры.");
+            }
+
             if (request.Players is null || request.Players.Count != 4 ||
                 request.Players.Select(player => player.PlayerNumber).Order().SequenceEqual([1, 2, 3, 4]) is false)
             {
                 return BadRequest("Необходимо передать результаты четырех игроков с номерами от 1 до 4.");
             }
 
-            var score = new GameScore();
+            var score = new GameScore { GameType = request.GameType };
+            var profiles = await _dbContext.Players.ToListAsync();
 
             foreach (var input in request.Players)
             {
@@ -67,10 +73,27 @@ namespace MedievalEra.Server.Controllers
                                         input.CathedralDiceCount +
                                         input.CultureIcons;
 
+                var playerName = input.PlayerName.Trim();
+                var profile = profiles.FirstOrDefault(candidate =>
+                    string.Equals(candidate.Name, playerName, StringComparison.OrdinalIgnoreCase));
+                if (profile is null)
+                {
+                    profile = new Core.Store.Entitites.PlayerEntity
+                    {
+                        Name = playerName,
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    profiles.Add(profile);
+                    _dbContext.Players.Add(profile);
+                }
+                profile.LastGame = DateTime.UtcNow;
+
                 score.Players.Add(new PlayerScore
                 {
                     PlayerNumber = input.PlayerNumber,
-                    PlayerName = input.PlayerName.Trim(),
+                    PlayerName = playerName,
+                    PlayerEntity = profile,
+                    ResultAccepted = profile.PasswordHash is null,
                     Buildings = buildings,
                     MarketBonus = input.MarketBonus,
                     GuildResources = input.GuildResources,
@@ -114,6 +137,31 @@ namespace MedievalEra.Server.Controllers
             return CreatedAtAction(nameof(Get), new { id = score.Id }, new { score.Id });
         }
 
+        [HttpGet]
+        public async Task<IActionResult> List()
+        {
+            var scores = await _dbContext.GameScores
+                .AsNoTracking()
+                .OrderByDescending(game => game.CreatedAt)
+                .Select(game => new
+                {
+                    game.Id,
+                    game.CreatedAt,
+                    game.GameType,
+                    Players = game.Players.OrderBy(player => player.PlayerNumber).Select(player => new
+                    {
+                        player.PlayerName,
+                        player.Title,
+                        player.FinalTotal,
+                        player.HasTitle,
+                        player.ResultAccepted
+                    })
+                })
+                .ToListAsync();
+
+            return Ok(scores);
+        }
+
         [HttpGet("{id:int}")]
         public async Task<IActionResult> Get(int id)
         {
@@ -139,6 +187,7 @@ namespace MedievalEra.Server.Controllers
 
     public class GameScoreRequest
     {
+        public GameType GameType { get; set; } = GameType.Tabletop;
         public List<PlayerScoreRequest>? Players { get; set; } = [];
     }
 

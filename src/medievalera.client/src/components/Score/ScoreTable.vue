@@ -1,6 +1,13 @@
 <template>
   <div class="table-container">
     <form @submit.prevent="saveScore">
+    <label class="game-type-label">
+      Тип игры
+      <select v-model="gameType">
+        <option value="tabletop">Настольная</option>
+        <option value="online">Онлайн</option>
+      </select>
+    </label>
     <table class="custom-table">
       <thead>
         <tr>
@@ -163,6 +170,7 @@ const players = reactive(Array.from({ length: 4 }, (_, index) => ({
 })))
 
 const saving = ref(false)
+const gameType = ref('tabletop')
 const message = ref('')
 const isError = ref(false)
 
@@ -233,6 +241,7 @@ async function saveScore() {
   isError.value = false
 
   const payload = {
+    gameType: gameType.value,
     players: players.map(player => ({
       playerNumber: player.playerNumber,
       playerName: player.playerName,
@@ -337,6 +346,12 @@ async function saveScore() {
   form > button {
     margin-top: 12px;
     padding: 8px 14px;
+  }
+  .game-type-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin: 8px 0;
   }
   form > button:disabled {
     cursor: wait;

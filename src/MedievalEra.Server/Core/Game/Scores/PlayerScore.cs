@@ -23,5 +23,8 @@ namespace MedievalEra.Server.Core.Game.Scores
 
         public int GameScoreId { get; set; }
         public GameScore GameScore { get; set; } = null!;
+        public int PlayerEntityId { get; set; }
+        public MedievalEra.Server.Core.Store.Entitites.PlayerEntity PlayerEntity { get; set; } = null!;
+        public bool ResultAccepted { get; set; } = true;
     }
 }

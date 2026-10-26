@@ -77,13 +77,15 @@ namespace MedievalEra.Server.Core.Store
                 entity.HasKey(e => e.Id);
 
                 // Индексы для оптимизации запросов
-                entity.HasIndex(e => e.Name).IsUnique();
-
                 // Ограничения и валидация
                 entity.Property(e => e.Name)
                     .IsRequired()
                     .HasMaxLength(50)
-                    .IsUnicode(false);
+                    .IsUnicode(false)
+                    .UseCollation("NOCASE");
+                entity.Property(e => e.PasswordHash);
+                entity.HasIndex(e => e.Name)
+                    .HasDatabaseName("IX_Players_Name_NoCase");
 
                 // Для SQLite специфичные настройки
                 if (Database.IsSqlite())
@@ -122,6 +124,16 @@ namespace MedievalEra.Server.Core.Store
                 .WithOne(player => player.GameScore)
                 .HasForeignKey(player => player.GameScoreId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<GameScoreRecord>()
+                .Property(game => game.GameType)
+                .HasConversion<int>();
+
+            modelBuilder.Entity<PlayerScoreRecord>()
+                .HasOne(player => player.PlayerEntity)
+                .WithMany()
+                .HasForeignKey(player => player.PlayerEntityId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<PlayerScoreRecord>()
                 .HasMany(player => player.Buildings)

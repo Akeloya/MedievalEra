@@ -1,5 +1,6 @@
 ﻿using MedievalEra.Server.Core.Store;
 using MedievalEra.Server.Core.Store.Entitites;
+using Microsoft.EntityFrameworkCore;
 
 namespace MedievalEra.Server.Tests.Core.Store
 {
@@ -32,5 +33,28 @@ namespace MedievalEra.Server.Tests.Core.Store
             Assert.That(dbPlayer, Is.Not.Null);
             Assert.That(dbPlayer.Name, Is.EqualTo(player.Name));
         }        
-    }
+
+        [Test]
+        public async Task EnsureCurrentSchema_UpgradesLegacySqliteWithoutDroppingProfiles()
+        {
+            await using var dbContext = new AppDbContext(
+                AppDbContext.DatabaseType.Sqlite,
+                "Data Source=:memory:");
+            await dbContext.Database.OpenConnectionAsync();
+            await dbContext.Database.ExecuteSqlRawAsync(
+                "CREATE TABLE \"Players\" (\"Id\" INTEGER PRIMARY KEY, \"Name\" TEXT NOT NULL, \"CreatedAt\" TEXT NOT NULL, \"LastGame\" TEXT NULL)");
+            await dbContext.Database.ExecuteSqlRawAsync(
+                "CREATE TABLE \"GameScores\" (\"Id\" INTEGER PRIMARY KEY, \"CreatedAt\" TEXT NOT NULL)");
+            await dbContext.Database.ExecuteSqlRawAsync(
+                "CREATE TABLE \"PlayerScores\" (\"Id\" INTEGER PRIMARY KEY, \"GameScoreId\" INTEGER NOT NULL)");
+            await dbContext.Database.ExecuteSqlRawAsync(
+                "INSERT INTO \"Players\" (\"Name\", \"CreatedAt\") VALUES ('Player', '2026-01-01'), ('player', '2026-01-02')");
+
+            await DatabaseSchemaInitializer.EnsureCurrentSchemaAsync(dbContext);
+
+            var playerCount = await dbContext.Database.SqlQueryRaw<int>(
+                "SELECT COUNT(*) AS \"Value\" FROM \"Players\"").SingleAsync();
+            Assert.That(playerCount, Is.EqualTo(2));
+        }
+    }        
 }

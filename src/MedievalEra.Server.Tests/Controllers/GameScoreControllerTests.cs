@@ -1,9 +1,15 @@
 using MedievalEra.Server.Controllers;
 using MedievalEra.Server.Core.Game.Enums;
+using MedievalEra.Server.Core.Game.Scores;
 using MedievalEra.Server.Core.Store;
 
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Identity;
+using System.Text.Json;
+using ProfileEntity = MedievalEra.Server.Core.Store.Entitites.PlayerEntity;
 
 namespace MedievalEra.Server.Tests.Controllers
 {
@@ -113,6 +119,102 @@ namespace MedievalEra.Server.Tests.Controllers
             Assert.That(savedPlayers.Select(player => player.MostDevelopedCultureBonus), Is.All.EqualTo(5));
             Assert.That(savedPlayers.Select(player => player.LargestWalledAreaBonus), Is.All.EqualTo(10));
             Assert.That(savedPlayers.Select(player => player.FinalTotal), Is.All.EqualTo(18));
+        }
+
+        [Test]
+        public async Task Save_AssociatesRegisteredPlayerAndMarksTheirResultPending()
+        {
+            await using var dbContext = new AppDbContext(
+                AppDbContext.DatabaseType.InMemory,
+                Guid.NewGuid().ToString());
+            await dbContext.Database.EnsureCreatedAsync();
+            var registeredProfile = new ProfileEntity
+            {
+                Name = "Online player",
+                CreatedAt = DateTime.UtcNow,
+                PasswordHash = "password-hash"
+            };
+            dbContext.Players.Add(registeredProfile);
+            await dbContext.SaveChangesAsync();
+
+            var request = new GameScoreRequest
+            {
+                GameType = GameType.Online,
+                Players = Enumerable.Range(1, 4).Select(playerNumber => new PlayerScoreRequest
+                {
+                    PlayerNumber = playerNumber,
+                    PlayerName = playerNumber == 1 ? " online player " : $"Offline {playerNumber}",
+                    Buildings = []
+                }).ToList()
+            };
+
+            var response = await new GameScoreController(dbContext).Save(request);
+            Assert.That(response, Is.InstanceOf<CreatedAtActionResult>());
+
+            var savedGame = await dbContext.GameScores.Include(game => game.Players).SingleAsync();
+            var savedRegisteredPlayer = savedGame.Players.Single(player => player.PlayerNumber == 1);
+            Assert.That(savedGame.GameType, Is.EqualTo(GameType.Online));
+            Assert.That(savedRegisteredPlayer.PlayerEntityId, Is.EqualTo(registeredProfile.Id));
+            Assert.That(savedRegisteredPlayer.ResultAccepted, Is.False);
+            Assert.That(savedGame.Players.Where(player => player.PlayerNumber != 1)
+                .Select(player => player.ResultAccepted), Is.All.True);
+
+            var historyResponse = await new GameScoreController(dbContext).List();
+            Assert.That(historyResponse, Is.InstanceOf<OkObjectResult>());
+            var historyJson = JsonSerializer.Serialize(((OkObjectResult)historyResponse).Value);
+            using var history = JsonDocument.Parse(historyJson);
+            Assert.That(history.RootElement[0].GetProperty("GameType").GetInt32(), Is.EqualTo((int)GameType.Online));
+            Assert.That(history.RootElement[0].GetProperty("Players").GetArrayLength(), Is.EqualTo(4));
+        }
+
+        [Test]
+        public async Task AcceptResult_OnlyAcceptsResultBelongingToSignedInProfile()
+        {
+            await using var dbContext = new AppDbContext(
+                AppDbContext.DatabaseType.InMemory,
+                Guid.NewGuid().ToString());
+            await dbContext.Database.EnsureCreatedAsync();
+            var profile = new ProfileEntity
+            {
+                Name = "Online player",
+                CreatedAt = DateTime.UtcNow,
+                PasswordHash = "password-hash"
+            };
+            dbContext.Players.Add(profile);
+            await dbContext.SaveChangesAsync();
+            var savedResult = new PlayerScore
+            {
+                PlayerNumber = 1,
+                PlayerName = profile.Name,
+                PlayerEntityId = profile.Id,
+                ResultAccepted = false,
+                GameScore = new GameScore()
+            };
+            dbContext.PlayerScores.Add(savedResult);
+            await dbContext.SaveChangesAsync();
+
+            var controller = new PlayerProfileController(dbContext, new PasswordHasher<ProfileEntity>());
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext
+                {
+                    User = new ClaimsPrincipal(new ClaimsIdentity(
+                    [
+                        new Claim(ClaimTypes.NameIdentifier, profile.Id.ToString())
+                    ]))
+                }
+            };
+
+            var profileResponse = await controller.GetCurrentProfile();
+            Assert.That(profileResponse, Is.InstanceOf<OkObjectResult>());
+            var profileJson = JsonSerializer.Serialize(((OkObjectResult)profileResponse).Value);
+            using var profileDocument = JsonDocument.Parse(profileJson);
+            Assert.That(profileDocument.RootElement.GetProperty("PendingResults").GetArrayLength(), Is.EqualTo(1));
+
+            var response = await controller.AcceptResult(savedResult.Id);
+
+            Assert.That(response, Is.InstanceOf<NoContentResult>());
+            Assert.That((await dbContext.PlayerScores.SingleAsync()).ResultAccepted, Is.True);
         }
     }
 }
