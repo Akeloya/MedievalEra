@@ -16,6 +16,154 @@ namespace MedievalEra.Server.Tests.Controllers
     [TestFixture]
     public class GameScoreControllerTests
     {
+        [TestCase(Buildings.ScorchedEarth, false, false)]
+        [TestCase(Buildings.ScorchedEarth, true, false)]
+        [TestCase(Buildings.ScorchedEarth, false, true)]
+        [TestCase(Buildings.Wall, false, false)]
+        [TestCase(Buildings.Wall, true, false)]
+        [TestCase(Buildings.Wall, false, true)]
+        public async Task Save_NonScoringBuildingsRespectSetAndWallLimits(
+            Buildings type, bool exceedSet, bool exceedInsideWall)
+        {
+            await using var dbContext = new AppDbContext(
+                AppDbContext.DatabaseType.InMemory, Guid.NewGuid().ToString());
+            var definition = new MedievalEra.Server.Core.Game.BuildingsFactory().Get(type);
+            Assert.That(definition.Score, Is.Null);
+            var request = new GameScoreRequest
+            {
+                Players = Enumerable.Range(1, 4).Select(number => new PlayerScoreRequest
+                {
+                    PlayerNumber = number,
+                    PlayerName = $"Игрок {number}",
+                    Buildings = number == 1
+                        ? [new BuildingScoreRequest
+                        {
+                            Building = type, Count = definition.Quantity,
+                            InsideWallCount = definition.Quantity + (exceedInsideWall ? 1 : 0)
+                        }, new BuildingScoreRequest { Building = Buildings.Tower, Count = 1, InsideWallCount = 1 }]
+                        : number == 2 && exceedSet
+                            ? [new BuildingScoreRequest { Building = type, Count = 1 }]
+                            : []
+                }).ToList()
+            };
+
+            var response = await new GameScoreController(dbContext).Save(request);
+
+            if (exceedSet || exceedInsideWall)
+            {
+                Assert.That(response, Is.InstanceOf<BadRequestObjectResult>());
+                Assert.That(await dbContext.GameScores.CountAsync(), Is.Zero);
+                return;
+            }
+
+            Assert.That(response, Is.InstanceOf<CreatedAtActionResult>());
+            var player = await dbContext.PlayerScores.Include(player => player.Buildings)
+                .SingleAsync(player => player.PlayerNumber == 1);
+            var building = player.Buildings.Single(building => building.Building == type);
+            Assert.That(building.Count, Is.EqualTo(definition.Quantity));
+            Assert.That(building.InsideWallCount, Is.EqualTo(definition.Quantity));
+            Assert.That(building.Points, Is.Zero);
+            Assert.That(player.IntermediateTotal, Is.EqualTo(2));
+            Assert.That(player.FinalTotal, Is.EqualTo(2));
+        }
+
+        [TestCase(2, 0, 0, false)]
+        [TestCase(1, 1, 0, false)]
+        [TestCase(1, 0, 2, false)]
+        [TestCase(0, 0, 1, false)]
+        [TestCase(-1, 0, 0, false)]
+        [TestCase(1, 0, -1, false)]
+        [TestCase(1, 0, 0, true)]
+        public async Task Save_RejectsInvalidBuildingCountsWithoutPersisting(
+            int firstCount, int secondCount, int insideWall, bool duplicate)
+        {
+            await using var dbContext = new AppDbContext(
+                AppDbContext.DatabaseType.InMemory, Guid.NewGuid().ToString());
+            var request = new GameScoreRequest
+            {
+                Players = Enumerable.Range(1, 4).Select(number => new PlayerScoreRequest
+                {
+                    PlayerNumber = number,
+                    PlayerName = $"Игрок {number}",
+                    Buildings = [new BuildingScoreRequest
+                    {
+                        Building = Buildings.Tower,
+                        Count = number == 1 ? firstCount : number == 2 ? secondCount : 0,
+                        InsideWallCount = number == 1 ? insideWall : 0
+                    }]
+                }).ToList()
+            };
+            if (duplicate) request.Players[0].Buildings!.Add(new BuildingScoreRequest { Building = Buildings.Tower });
+
+            var response = await new GameScoreController(dbContext).Save(request);
+
+            Assert.That(response, Is.InstanceOf<BadRequestObjectResult>());
+            Assert.That(await dbContext.GameScores.CountAsync(), Is.Zero);
+            Assert.That(await dbContext.Players.CountAsync(), Is.Zero);
+            Assert.That(dbContext.ChangeTracker.HasChanges(), Is.False);
+        }
+
+        [TestCase(Buildings.Empty)]
+        [TestCase((Buildings)999)]
+        public async Task Save_RejectsTypesOutsideGameSet(Buildings type)
+        {
+            await using var dbContext = new AppDbContext(
+                AppDbContext.DatabaseType.InMemory, Guid.NewGuid().ToString());
+            var request = new GameScoreRequest
+            {
+                Players = Enumerable.Range(1, 4).Select(number => new PlayerScoreRequest
+                {
+                    PlayerNumber = number, PlayerName = $"Игрок {number}",
+                    Buildings = [new BuildingScoreRequest { Building = type }]
+                }).ToList()
+            };
+            Assert.That(await new GameScoreController(dbContext).Save(request), Is.InstanceOf<BadRequestObjectResult>());
+        }
+
+        [Test]
+        public void Buildings_ReturnsFactoryGameSet()
+        {
+            var response = (OkObjectResult)new BuildingsController().Get();
+            using var json = JsonDocument.Parse(JsonSerializer.Serialize(response.Value,
+                new JsonSerializerOptions(JsonSerializerDefaults.Web)));
+            var factory = new MedievalEra.Server.Core.Game.BuildingsFactory();
+            Assert.That(json.RootElement.GetArrayLength(), Is.EqualTo(MedievalEra.Server.Core.Game.BuildingsFactory.GameSet.Count));
+            foreach (var item in json.RootElement.EnumerateArray())
+            {
+                var type = (Buildings)item.GetProperty("id").GetInt32();
+                var building = factory.Get(type);
+                Assert.That(factory.CanBuild(type), Is.True);
+                Assert.That(item.GetProperty("label").GetString(), Is.EqualTo(building.Name));
+                var points = item.GetProperty("points");
+                Assert.That(points.ValueKind == JsonValueKind.Null ? (int?)null : points.GetInt32(), Is.EqualTo(building.Score));
+                Assert.That(item.GetProperty("quantity").GetInt32(), Is.EqualTo(building.Quantity));
+                Assert.That(item.GetProperty("key").GetString(), Is.EqualTo(type.ToString()));
+            }
+            Assert.That(factory.CanBuild(Buildings.Empty), Is.False);
+            Assert.Throws<ArgumentOutOfRangeException>(() => factory.Get(Buildings.Empty));
+        }
+
+        [Test]
+        public void Titles_ReturnsRangesUsedForScoreCalculation()
+        {
+            using var dbContext = new AppDbContext(
+                AppDbContext.DatabaseType.InMemory,
+                Guid.NewGuid().ToString());
+            var controller = new GameScoreController(dbContext);
+
+            var response = controller.Titles() as OkObjectResult;
+            var json = JsonSerializer.Serialize(response?.Value, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+            var ranges = JsonSerializer.Deserialize<List<GameScoreTitleRange>>(json,
+                new JsonSerializerOptions(JsonSerializerDefaults.Web))!;
+
+            Assert.That(ranges, Has.Count.EqualTo(7));
+            foreach (var score in new[] { int.MinValue, 44, 45, 64, 65, 79, 80, 89, 90, 94, 95, 99, 100, int.MaxValue })
+            {
+                var range = ranges.First(range => range.MaxScore is null || score <= range.MaxScore.Value);
+                Assert.That((range.Title, range.Comment), Is.EqualTo(GameScoreTitle.ForScore(score)));
+            }
+        }
+
         [Test]
         public async Task Save_CalculatesAndPersistsAllPlayerScores()
         {
@@ -34,20 +182,14 @@ namespace MedievalEra.Server.Tests.Controllers
                     [
                         new BuildingScoreRequest
                         {
-                            Building = Buildings.ScorchedEarth,
-                            Count = 1,
-                            InsideWallCount = 1
-                        },
-                        new BuildingScoreRequest
-                        {
                             Building = Buildings.Wall,
-                            Count = 1,
-                            InsideWallCount = 1
+                            Count = playerNumber == 1 ? 1 : 0,
+                            InsideWallCount = 0
                         },
                         new BuildingScoreRequest
                         {
                             Building = Buildings.Tower,
-                            Count = playerNumber == 1 ? 2 : 0,
+                            Count = playerNumber == 1 ? 1 : 0,
                             InsideWallCount = playerNumber == 1 ? 1 : 0
                         }
                     ],
@@ -72,9 +214,9 @@ namespace MedievalEra.Server.Tests.Controllers
                 .SingleAsync();
             var playerScore = savedGame.Players.Single(player => player.PlayerNumber == 1);
 
-            Assert.That(playerScore.IntermediateTotal, Is.EqualTo(30));
-            Assert.That(playerScore.FinalTotal, Is.EqualTo(26));
-            Assert.That(playerScore.Buildings.Single(building => building.Building == Buildings.Tower).Points, Is.EqualTo(3));
+            Assert.That(playerScore.IntermediateTotal, Is.EqualTo(29));
+            Assert.That(playerScore.FinalTotal, Is.EqualTo(25));
+            Assert.That(playerScore.Buildings.Single(building => building.Building == Buildings.Tower).Points, Is.EqualTo(2));
             Assert.That(playerScore.Buildings
                 .Where(building => building.Building is Buildings.ScorchedEarth or Buildings.Wall)
                 .Sum(building => building.Points), Is.Zero);

@@ -2,15 +2,23 @@ namespace MedievalEra.Server.Core.Game.Scores
 {
     public static class GameScoreTitle
     {
-        public static (string Title, string Comment) ForScore(int score) => score switch
+        public static IReadOnlyList<GameScoreTitleRange> Ranges { get; } = Array.AsReadOnly<GameScoreTitleRange>(
+        [
+            new(44, "Раб", "Терпимо. Продолжайте возделывать землю."),
+            new(64, "Крестьянин", "Неплохое начало. Вы хотя бы свободны."),
+            new(79, "Торговец", "Хорошее предложение. Повысим ставки?"),
+            new(89, "Рыцарь", "Отличный турнир. Сумеете лучше в следующий раз?"),
+            new(94, "Знать", "Величественное представление!"),
+            new(99, "Монарх", "Королевское достижение!"),
+            new(null, "Папа", "Ваши кубики, несомненно, были благословлены!")
+        ]);
+
+        public static (string Title, string Comment) ForScore(int score)
         {
-            < 45 => ("Раб", "Терпимо. Продолжайте возделывать землю."),
-            <= 64 => ("Крестьянин", "Неплохое начало. Вы хотя бы свободны."),
-            <= 79 => ("Торговец", "Хорошее предложение. Повысим ставки?"),
-            <= 89 => ("Рыцарь", "Отличный турнир. Сумеете лучше в следующий раз?"),
-            <= 94 => ("Знать", "Величественное представление!"),
-            <= 99 => ("Монарх", "Королевское достижение!"),
-            _ => ("Папа", "Ваши кубики, несомненно, были благословлены!")
-        };
+            var range = Ranges.First(range => range.MaxScore is null || score <= range.MaxScore.Value);
+            return (range.Title, range.Comment);
+        }
     }
+
+    public sealed record GameScoreTitleRange(int? MaxScore, string Title, string Comment);
 }

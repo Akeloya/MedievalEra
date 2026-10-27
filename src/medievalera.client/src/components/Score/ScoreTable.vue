@@ -23,16 +23,16 @@
       <tbody>
         <tr v-for="building in buildings" :key="building.key" class="row-color-blue">
           <td>{{ building.label }}</td>
-          <td>{{ building.points || 'Не учитывается' }}</td>
+          <td></td>
           <td v-for="player in players" :key="player.playerNumber">
             <div class="building-inputs">
-              <label>
-                Построено
+              <label title="Построено">
+                <span class="building-icon" role="img" aria-label="Построено">🔨</span>
                 <input v-model.number="player.buildings[building.key].count"
-                       type="number" min="0" step="1" required>
+                       type="number" min="0" step="1" :max="availableFor(player, building)" required>
               </label>
-              <label>
-                В стене
+              <label title="В стене">
+                <span class="building-icon" role="img" aria-label="В стене">🏰</span>
                 <input v-model.number="player.buildings[building.key].insideWallCount"
                        type="number" min="0" step="1"
                        :max="player.buildings[building.key].count" required>
@@ -85,7 +85,7 @@
 
         <tr class="row-color-green">
           <td>Очки бедствий</td>
-          <td>вычитаются</td>
+          <td></td>
           <td v-for="player in players" :key="player.playerNumber">
             <input v-model.number="player.disasterPoints"
                    type="number" min="0" step="1" required>
@@ -113,31 +113,39 @@
         </tr>
       </tbody>
     </table>
-    <button type="submit" :disabled="saving">
+    <button type="submit" :disabled="saving || !buildingsLoaded">
       {{ saving ? 'Сохранение...' : 'Сохранить результаты' }}
     </button>
     <p v-if="message" :class="{ error: isError }" role="status">{{ message }}</p>
+    <p v-if="titlesError" class="error" role="status">{{ titlesError }}</p>
+    <p v-if="buildingsError" class="error" role="status">{{ buildingsError }}</p>
     </form>
   </div>
 </template>
 
 <script setup>
-import { reactive, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 
-const buildings = [
-  { id: 3, key: 'Tower', label: 'Башня', points: 1 },
-  { id: 4, key: 'House', label: 'Дом', points: 1 },
-  { id: 5, key: 'Farm', label: 'Ферма', points: 1 },
-  { id: 6, key: 'Church', label: 'Церковь', points: 1 },
-  { id: 7, key: 'Monastery', label: 'Монастырь', points: 4 },
-  { id: 8, key: 'Cathedral', label: 'Собор', points: 5 },
-  { id: 9, key: 'CityHouse', label: 'Городской дом', points: 1 },
-  { id: 10, key: 'Guild', label: 'Гильдия', points: 3 },
-  { id: 11, key: 'Market', label: 'Рынок', points: 2 },
-  { id: 12, key: 'Hospital', label: 'Больница', points: 3 },
-  { id: 13, key: 'Sawmill', label: 'Лесопилка', points: 2 },
-  { id: 14, key: 'University', label: 'Университет', points: 4 }
-]
+const buildings = ref([])
+const buildingsLoaded = ref(false)
+const buildingsError = ref('')
+
+onMounted(async () => {
+  try {
+    const response = await fetch('/api/Buildings')
+    if (!response.ok) throw new Error(`Ошибка сервера: ${response.status}`)
+    const gameSet = await response.json()
+    for (const player of players) {
+      player.buildings = Object.fromEntries(gameSet.map(building => [
+        building.key, { count: 0, insideWallCount: 0 }
+      ]))
+    }
+    buildings.value = gameSet
+    buildingsLoaded.value = true
+  } catch {
+    buildingsError.value = 'Не удалось загрузить игровой набор. Обновите страницу, чтобы повторить попытку.'
+  }
+})
 
 const quantityBonuses = [
   { key: 'marketBonus', label: 'Бонус рынка', inputLabel: 'Очки' },
@@ -150,10 +158,7 @@ const quantityBonuses = [
 const players = reactive(Array.from({ length: 4 }, (_, index) => ({
   playerNumber: index + 1,
   playerName: `Игрок ${index + 1}`,
-  buildings: Object.fromEntries(buildings.map(building => [
-    building.key,
-    { count: 0, insideWallCount: 0 }
-  ])),
+  buildings: {},
   marketBonus: 0,
   guildResources: 0,
   universityCultureLevel: 0,
@@ -166,14 +171,32 @@ const players = reactive(Array.from({ length: 4 }, (_, index) => ({
 const saving = ref(false)
 const message = ref('')
 const isError = ref(false)
+const scoreTitles = ref([])
+const titlesError = ref('')
+
+onMounted(async () => {
+  try {
+    const response = await fetch('/api/GameScore/titles')
+    if (!response.ok) throw new Error(`Ошибка сервера: ${response.status}`)
+    scoreTitles.value = await response.json()
+  } catch {
+    titlesError.value = 'Не удалось загрузить титулы. Обновите страницу, чтобы повторить попытку.'
+  }
+})
 
 function buildingTotal(player, building) {
   const score = player.buildings[building.key]
-  return building.points * (Number(score.count || 0) + Number(score.insideWallCount || 0))
+  return (building.points ?? 0) * (Number(score.count || 0) + Number(score.insideWallCount || 0))
+}
+
+function availableFor(player, building) {
+  const usedByOthers = players.filter(candidate => candidate !== player)
+    .reduce((total, candidate) => total + Number(candidate.buildings[building.key].count || 0), 0)
+  return Math.max(0, building.quantity - usedByOthers)
 }
 
 function intermediateTotal(player) {
-  const buildingsTotal = buildings.reduce(
+  const buildingsTotal = buildings.value.reduce(
     (total, building) => total + buildingTotal(player, building),
     0
   )
@@ -209,18 +232,22 @@ function walledAreaBonus(player) {
 }
 
 function titleForScore(score) {
-  if (score < 45) return { title: 'Раб', comment: 'Терпимо. Продолжайте возделывать землю.' }
-  if (score <= 64) return { title: 'Крестьянин', comment: 'Неплохое начало. Вы хотя бы свободны.' }
-  if (score <= 79) return { title: 'Торговец', comment: 'Хорошее предложение. Повысим ставки?' }
-  if (score <= 89) return { title: 'Рыцарь', comment: 'Отличный турнир. Сумеете лучше в следующий раз?' }
-  if (score <= 94) return { title: 'Знать', comment: 'Величественное представление!' }
-  if (score <= 99) return { title: 'Монарх', comment: 'Королевское достижение!' }
-  return { title: 'Папа', comment: 'Ваши кубики, несомненно, были благословлены!' }
+  return scoreTitles.value.find(range => range.maxScore === null || score <= range.maxScore)
+    ?? { title: '—', comment: '' }
 }
 
 async function saveScore() {
+  if (!buildingsLoaded.value) return
+  const exceeded = buildings.value.find(building => players.reduce(
+    (total, player) => total + Number(player.buildings[building.key].count || 0), 0
+  ) > building.quantity)
+  if (exceeded) {
+    isError.value = true
+    message.value = `Превышен запас здания «${exceeded.label}»: в наборе ${exceeded.quantity}.`
+    return
+  }
   if (players.some(player =>
-    buildings.some(building =>
+    buildings.value.some(building =>
       player.buildings[building.key].insideWallCount > player.buildings[building.key].count
     )
   )) {
@@ -238,7 +265,7 @@ async function saveScore() {
     players: players.map(player => ({
       playerNumber: player.playerNumber,
       playerName: player.playerName,
-      buildings: buildings.map(building => ({
+      buildings: buildings.value.map(building => ({
         building: building.id,
         count: Number(player.buildings[building.key].count || 0),
         insideWallCount: Number(player.buildings[building.key].insideWallCount || 0)
@@ -328,6 +355,10 @@ async function saveScore() {
     justify-content: center;
     gap: 8px;
   }
+  .building-icon {
+    font-size: 18px;
+    line-height: 1;
+  }
   .building-inputs label,
   .custom-table td label {
     display: inline-flex;
@@ -335,6 +366,14 @@ async function saveScore() {
     flex-direction: column;
     gap: 4px;
     font-size: 11px;
+  }
+  .custom-table .building-inputs label {
+    flex-direction: row;
+    flex-shrink: 0;
+  }
+  .custom-table .building-inputs input[type="number"] {
+    width: 45px;
+    flex: 0 0 45px;
   }
   .custom-table td strong {
     display: block;

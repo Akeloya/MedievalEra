@@ -1,4 +1,5 @@
 using MedievalEra.Server.Core.Game.Enums;
+using MedievalEra.Server.Core.Game;
 using MedievalEra.Server.Core.Game.Scores;
 using MedievalEra.Server.Core.Store;
 
@@ -18,6 +19,9 @@ namespace MedievalEra.Server.Controllers
             _dbContext = dbContext;
         }
 
+        [HttpGet("titles")]
+        public IActionResult Titles() => Ok(GameScoreTitle.Ranges);
+
         [HttpPost]
         public async Task<IActionResult> Save([FromBody] GameScoreRequest request)
         {
@@ -33,6 +37,29 @@ namespace MedievalEra.Server.Controllers
             }
 
             var score = new GameScore { GameType = request.GameType };
+            var factory = new BuildingsFactory();
+            // Проверяем общий запас до расчётов и изменений профилей игроков.
+            foreach (var input in request.Players)
+            {
+                if (input.Buildings is null || input.Buildings.Any(building =>
+                    !factory.CanBuild(building.Building) || building.Count < 0 ||
+                    building.InsideWallCount < 0 || building.InsideWallCount > building.Count) ||
+                    input.Buildings.Select(building => building.Building).Distinct().Count() != input.Buildings.Count)
+                {
+                    return BadRequest($"Некорректные здания игрока {input.PlayerNumber}.");
+                }
+            }
+
+            foreach (var building in BuildingsFactory.GameSet)
+            {
+                var built = request.Players.SelectMany(player => player.Buildings!)
+                    .Where(item => item.Building == building.Type).Sum(item => (long)item.Count);
+                if (built > building.Quantity)
+                {
+                    return BadRequest($"Превышен запас здания «{building.Name}»: построено {built}, в наборе {building.Quantity}.");
+                }
+            }
+
             var profiles = await _dbContext.Players.ToListAsync();
 
             foreach (var input in request.Players)
@@ -61,7 +88,7 @@ namespace MedievalEra.Server.Controllers
                     Building = building.Building,
                     Count = building.Count,
                     InsideWallCount = building.InsideWallCount,
-                    Points = GetBuildingPoints(building.Building) *
+                    Points = (factory.Get(building.Building).Score ?? 0) *
                              (building.Count + building.InsideWallCount)
                 }).ToList();
 
@@ -173,16 +200,6 @@ namespace MedievalEra.Server.Controllers
             return score is null ? NotFound() : Ok(score);
         }
 
-        private static int GetBuildingPoints(Buildings building) => building switch
-        {
-            Buildings.Empty or Buildings.ScorchedEarth or Buildings.Wall => 0,
-            Buildings.Tower or Buildings.House or Buildings.Farm or Buildings.Church or Buildings.CityHouse => 1,
-            Buildings.Market or Buildings.Sawmill => 2,
-            Buildings.Guild or Buildings.Hospital => 3,
-            Buildings.Monastery or Buildings.University => 4,
-            Buildings.Cathedral => 5,
-            _ => throw new ArgumentOutOfRangeException(nameof(building), building, "Неизвестный тип здания.")
-        };
     }
 
     public class GameScoreRequest
