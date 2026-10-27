@@ -95,40 +95,75 @@ onMounted(loadGames)
 
 <style scoped>
 .history {
-  margin: 12px 5px;
+  margin: 12px 0 0;
 }
 
 .search {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
-  margin: 12px 0;
+  margin: 16px 0;
+  font-weight: bold;
+  color: #4a3218;
 }
 
 .search input {
+  width: 100%;
   max-width: 320px;
-  padding: 7px 10px;
+  padding: 9px 12px;
+  font-family: var(--font-main);
+  font-size: 1rem;
+  color: #3f3020;
+  background: #fffdf6;
+  border: 2px solid #c9b48c;
+  border-radius: 8px;
+  box-shadow: inset 0 2px 4px rgba(90, 64, 32, 0.14);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.search input::placeholder {
+  color: #9c8a6f;
+  font-style: italic;
+}
+
+.search input:focus {
+  outline: none;
+  border-color: var(--era-orange);
+  box-shadow:
+    0 0 0 3px rgba(243, 146, 0, 0.25),
+    inset 0 2px 4px rgba(90, 64, 32, 0.12);
 }
 
 .table-scroll {
   overflow-x: auto;
+  background: #fffdf7;
+  border: 1px solid #c9b48c;
+  border-radius: 8px;
 }
 
 table {
   width: 100%;
   border-collapse: collapse;
+  color: #3f3020;
 }
 
 th,
 td {
-  padding: 10px;
-  border: 1px solid #aaa;
+  padding: 10px 12px;
+  border: 1px solid #d8c6a2;
   text-align: left;
   vertical-align: top;
 }
 
 th {
-  background: #e8e0cf;
+  background: linear-gradient(180deg, #e7d7b4 0%, #dcc79b 100%);
+  color: #4a3218;
+  font-weight: bold;
+}
+
+tbody tr:nth-child(even) {
+  background: rgba(246, 238, 219, 0.6);
 }
 
 .winners,
@@ -138,7 +173,7 @@ th {
 }
 
 .pending-warning {
-  color: #a34b00;
+  color: #8c4a00;
   font-size: 0.9em;
 }
 

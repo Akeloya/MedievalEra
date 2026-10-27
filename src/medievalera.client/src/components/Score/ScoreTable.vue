@@ -1,13 +1,9 @@
 <template>
   <div class="table-container">
     <form @submit.prevent="saveScore">
-    <label class="game-type-label">
-      Тип игры
-      <select v-model="gameType">
-        <option value="tabletop">Настольная</option>
-        <option value="online">Онлайн</option>
-      </select>
-    </label>
+    <p class="game-type-note">
+      Тип игры: <strong>Настольная</strong>
+    </p>
     <table class="custom-table">
       <thead>
         <tr>
@@ -129,8 +125,6 @@
 import { reactive, ref } from 'vue'
 
 const buildings = [
-  { id: 1, key: 'ScorchedEarth', label: 'Выжженная земля', points: 0 },
-  { id: 2, key: 'Wall', label: 'Стена', points: 0 },
   { id: 3, key: 'Tower', label: 'Башня', points: 1 },
   { id: 4, key: 'House', label: 'Дом', points: 1 },
   { id: 5, key: 'Farm', label: 'Ферма', points: 1 },
@@ -170,7 +164,6 @@ const players = reactive(Array.from({ length: 4 }, (_, index) => ({
 })))
 
 const saving = ref(false)
-const gameType = ref('tabletop')
 const message = ref('')
 const isError = ref(false)
 
@@ -241,7 +234,7 @@ async function saveScore() {
   isError.value = false
 
   const payload = {
-    gameType: gameType.value,
+    gameType: 'tabletop',
     players: players.map(player => ({
       playerNumber: player.playerNumber,
       playerName: player.playerName,
@@ -285,34 +278,50 @@ async function saveScore() {
 <style scoped>
   .table-container {
     overflow-x: auto;
-    margin: 5px;
+    margin: 14px 0 0;
   }
 
   .custom-table {
     width: 100%;
     border-collapse: collapse;
-    font-family: Arial, sans-serif;
+    font-family: var(--font-main);
     font-size: 14px;
+    color: #3f3020;
   }
 
   .custom-table th,
   .custom-table td {
-    border: 1px solid #aaa;
+    border: 1px solid #c9b48c;
     padding: 8px 12px;
     text-align: center;
     vertical-align: middle;
   }
-  .custom-table input[type="number"] {
+  .custom-table input[type="number"],
+  .custom-table input.player-name {
     box-sizing: border-box;
+    padding: 5px 6px;
+    font-family: var(--font-main);
+    font-size: 13px;
+    color: #3f3020;
+    background: #fffdf6;
+    border: 1px solid #c2ab80;
+    border-radius: 5px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+  .custom-table input[type="number"] {
     max-width: 80px;
     width: 100%;
   }
   .custom-table input.player-name {
-    box-sizing: border-box;
     display: block;
     margin-top: 6px;
     max-width: 150px;
     width: 100%;
+  }
+  .custom-table input:focus {
+    outline: none;
+    border-color: var(--era-orange);
+    box-shadow: 0 0 0 2px rgba(243, 146, 0, 0.28);
   }
   .building-inputs {
     display: flex;
@@ -344,14 +353,43 @@ async function saveScore() {
     margin-top: 4px;
   }
   form > button {
-    margin-top: 12px;
-    padding: 8px 14px;
+    margin-top: 16px;
+    padding: 10px 22px;
+    font-family: var(--font-main);
+    font-size: 1rem;
+    font-weight: bold;
+    letter-spacing: 0.3px;
+    color: #fff8dc;
+    background: linear-gradient(180deg, #55703a 0%, #3d5128 100%);
+    border: 2px solid #d2b48c;
+    border-radius: 8px;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    cursor: pointer;
+    transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
   }
-  .game-type-label {
+  form > button:hover:not(:disabled) {
+    background: linear-gradient(180deg, #648345 0%, #4a6230 100%);
+    box-shadow: 0 5px 12px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    transform: translateY(-1px);
+  }
+  form > button:active:not(:disabled) {
+    transform: translateY(1px);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
+  }
+  form > button:focus-visible {
+    outline: 3px solid rgba(243, 146, 0, 0.6);
+    outline-offset: 2px;
+  }
+  .game-type-note {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    margin: 8px 0;
+    gap: 6px;
+    margin: 4px 0 8px;
+    font-weight: bold;
+    color: #4a3218;
+  }
+  .game-type-note strong {
+    color: #6d4c2f;
   }
   form > button:disabled {
     cursor: wait;
@@ -369,7 +407,8 @@ async function saveScore() {
   }
 
   .header-group {
-    background-color: #e0e0e0;
+    background: linear-gradient(180deg, #e7d7b4 0%, #dcc79b 100%);
+    color: #4a3218;
     font-weight: bold;
     font-size: 16px;
   }
@@ -414,7 +453,7 @@ async function saveScore() {
 
   /* Альтернативный вариант для визуализации границ */
   .custom-table tbody tr:hover {
-    background-color: rgba(100, 100, 200, 0.9);
+    background-color: rgba(243, 146, 0, 0.16);
   }
 
   /* Номера строк */
@@ -422,7 +461,7 @@ async function saveScore() {
     font-weight: bold;
     font-size: 12px;
     text-align: left;
-    background-color: #f9f9f9;
+    background-color: #f4ecd9;
     width: 200px;
   }
 </style>

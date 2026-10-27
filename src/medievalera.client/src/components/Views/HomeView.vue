@@ -18,3 +18,10 @@ const isMenuRoute = computed(() => {
   return route.path == '/' || route.matched.at(-1)?.children?.length > 0
 })
 </script>
+
+<style scoped>
+.view-wrapper {
+  width: 100%;
+  min-width: 0;
+}
+</style>
