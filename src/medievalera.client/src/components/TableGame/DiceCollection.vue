@@ -1,6 +1,6 @@
 <!-- components/DiceCollection.vue -->
 <template>
-    <div class="dice-collection" :class="{ 'frozen-collection': isFrozen }">
+    <div class="dice-collection era-panel" :class="{ 'frozen-collection': isFrozen }">
         <div class="collection-header">
             <h3>{{ title }}</h3>
             <span class="count">{{ diceCollection.length }} кубиков</span>
@@ -15,8 +15,8 @@
                       :key="dice.id"
                       :dice="dice"
                       :is-frozen="isFrozen"
-                      :can-freeze="!isFrozen"
-                      :can-unfreeze="isFrozen"
+                      :can-freeze="actionsEnabled && !isFrozen"
+                      :can-unfreeze="actionsEnabled && isFrozen"
                       :isRollingComplete="isRollingComplete"
                       :can-reroll="canReroll"
                       @freeze="$emit('freeze-dice', dice)"
@@ -30,6 +30,10 @@
     import DiceCard from './DiceCard.vue';
 
     defineProps({
+        actionsEnabled: {
+            type: Boolean,
+            default: true
+        },
         title: {
             type: String,
             required: true
@@ -57,18 +61,19 @@
 
 <style scoped>
     .dice-collection {
-        background: white;
-        border-radius: 12px;
-        padding: 20px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        min-width: 0;
+        min-height: 190px;
+        padding: 14px;
     }
 
     .collection-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 20px;
-        padding-bottom: 10px;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-bottom: 12px;
+        padding-bottom: 8px;
         border-bottom: 2px solid #f0f0f0;
     }
 
@@ -78,8 +83,8 @@
         }
 
     .count {
-        background: #667eea;
-        color: white;
+        background: #dcc79b;
+        color: #4a3218;
         padding: 4px 12px;
         border-radius: 20px;
         font-size: 14px;
@@ -87,18 +92,19 @@
 
     .dice-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        gap: 20px;
-    }
-
-    .frozen-collection {
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+        gap: 28px 20px;
+        padding-bottom: 16px;
     }
 
     .empty-state {
         text-align: center;
-        padding: 40px;
+        padding: 12px;
         color: #999;
         font-style: italic;
+    }
+
+    .empty-state p {
+        margin: 0;
     }
 </style>

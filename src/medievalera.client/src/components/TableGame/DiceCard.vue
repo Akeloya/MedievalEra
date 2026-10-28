@@ -436,34 +436,15 @@ const selectedResource = defineModel('selectedResource', {
   }
 
   .action-btn {
-    border: none;
-    background: none;
     font-size: 14px;
     cursor: pointer;
     padding: 2px;
-    border-radius: 50%;
     width: 24px;
     height: 24px;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
   }
-
-    .action-btn.freeze:hover {
-      background: #3498DB;
-      color: white;
-    }
-
-    .action-btn.unfreeze:hover {
-      background: #E74C3C;
-      color: white;
-    }
-
-    .action-btn.bind:hover {
-      background: #9B59B6;
-      color: white;
-    }
 
   /* Адаптивность */
   @media (max-width: 768px) {

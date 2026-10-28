@@ -1,6 +1,6 @@
 <!-- components/GameHeader.vue -->
 <template>
-  <div class="game-header">
+  <div class="game-header era-panel">
     <div class="header-container">
       <h1>Игрок: {{ playerName }}</h1>
       <div v-if="isRollingComplete" class="stat-item turn-complete">
@@ -98,42 +98,41 @@
 
 <style scoped>
     .game-header {
-        background: white;
-        border-radius: 12px;
-        padding: 24px;
         display: flex;
         justify-content: space-between;
         align-items: center;
         flex-wrap: wrap;
-        gap: 20px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        margin-bottom: 20px;
+        gap: 10px;
+        padding: 14px;
     }
 
     .player-info {
         flex: 1;
     }
 
-    .player-info h1 {
-        margin: 0 0 12px 0;
-        font-size: 28px;
+    .header-container h1 {
+        margin: 0;
+        font-size: 22px;
+        overflow-wrap: anywhere;
         color: #333;
         font-weight: 600;
     }
 
     .stats {
         display: flex;
-        gap: 24px;
+        gap: 8px;
         flex-wrap: wrap;
     }
 
     .stat-item {
         display: flex;
-        flex-direction: column;
+        flex-direction: row;
+        align-items: center;
+        gap: 6px;
         background: #f8f9fa;
-        padding: 10px 16px;
+        padding: 5px 8px;
         border-radius: 8px;
-        min-width: 100px;
+        min-width: 0;
     }
 
     .stat-label {
@@ -141,11 +140,11 @@
         color: #666;
         text-transform: uppercase;
         letter-spacing: 0.5px;
-        margin-bottom: 4px;
+        margin-bottom: 0;
     }
 
     .stat-value {
-        font-size: 24px;
+        font-size: 18px;
         font-weight: bold;
         color: #333;
     }
@@ -161,6 +160,7 @@
 
     .header-actions {
         display: flex;
+        flex-wrap: wrap;
         gap: 12px;
     }
 
@@ -168,41 +168,15 @@
         display: flex;
         align-items: center;
         gap: 8px;
-        border: none;
-        padding: 12px 24px;
-        border-radius: 8px;
-        font-size: 16px;
+        padding: 8px 12px;
+        font-size: 14px;
         font-weight: 600;
         cursor: pointer;
-        transition: all 0.3s ease;
-        color: white;
-    }
-
-    .btn-new-turn {
-        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-        box-shadow: 0 4px 6px rgba(40, 167, 69, 0.2);
-    }
-
-    .btn-new-turn:hover:not(:disabled) {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 12px rgba(40, 167, 69, 0.3);
     }
 
     .btn-new-turn:disabled {
         opacity: 0.5;
         cursor: not-allowed;
-        transform: none;
-        box-shadow: none;
-    }
-
-    .btn-reset {
-        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-        box-shadow: 0 4px 6px rgba(220, 53, 69, 0.2);
-    }
-
-    .btn-reset:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 12px rgba(220, 53, 69, 0.3);
     }
 
     .btn-icon {
@@ -214,6 +188,8 @@
       justify-content: space-between; /* Первый влево, второй вправо */
       align-items: center; /* Центрируем по вертикали, если высота разная */
       width: 100%;
+      flex-wrap: wrap;
+      gap: 8px;
     }
     /* Адаптивность */
     @media (max-width: 768px) {
@@ -222,7 +198,7 @@
             align-items: stretch;
         }
 
-        .player-info h1 {
+        .header-container h1 {
             font-size: 24px;
             text-align: center;
         }
@@ -263,10 +239,6 @@
         100% {
             box-shadow: 0 4px 6px rgba(102, 126, 234, 0.2);
         }
-    }
-
-    .btn-new-turn:not(:disabled) {
-        animation: pulse 2s infinite;
     }
 
     /* Стили для маленьких экранов */

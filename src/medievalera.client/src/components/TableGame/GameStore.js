@@ -1,10 +1,10 @@
 // stores/gameStore.js
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
-import diceApi from "./diceApi";
+import diceApi from "./diceApi.js";
 import cookies from "js-cookie";
-import { DiceResources } from "./DiceResources";
-import { Dice } from './Dice';
+import { DiceResources } from "./DiceResources.js";
+import { Dice } from './Dice.js';
 
 export const useGameStore = defineStore("game", () => {
   // Состояние
@@ -13,6 +13,10 @@ export const useGameStore = defineStore("game", () => {
   const allDice = ref([]);
   const frozenDice = ref([]);
   const unlockedDice = ref([]);
+  const newDice = ref([]);
+  const rollHistory = ref([]);
+  const completedTurnActions = ref([]);
+  const pendingDiceActions = new Map();
   const rerollCount = ref(0);
   const turnCount = ref(0);
   const maxRerolls = 3;
@@ -91,13 +95,17 @@ export const useGameStore = defineStore("game", () => {
       });
       
       frozenDice.value = [];
+      newDice.value = [];
+      rollHistory.value = [];
+      completedTurnActions.value = [];
+      pendingDiceActions.clear();
       unlockedDice.value = [...allDice.value];
       rerollCount.value = 0;
       isRollingComplete.value = false;
       newRollPairs.value = [];
       hasStarterKit.value = true;
 
-      turnCount.value = 0;
+      turnCount.value = 1;
       isTurnCompleted.value = false;
       saveSessionToCookies();
     } catch (error) {
@@ -111,10 +119,11 @@ export const useGameStore = defineStore("game", () => {
     try {
       const dice = await diceApi.getDiceByType(type);
       // Убеждаемся, что это экземпляр Dice
-      const newDice = dice instanceof Dice ? dice : new Dice(dice);
-      allDice.value.push(newDice);
-      unlockedDice.value.push(newDice);
-      return newDice;
+      const acquiredDice = dice instanceof Dice ? dice : new Dice(dice);
+      allDice.value.push(acquiredDice);
+      // Полученные кубики вступают в игру только со следующего хода.
+      newDice.value.push(acquiredDice);
+      return acquiredDice;
     } catch (error) {
       console.error(`Failed to get dice type ${type}:`, error);
       throw error;
@@ -130,7 +139,9 @@ export const useGameStore = defineStore("game", () => {
     console.log('***************** Rolling dice:', unlockedDice.value.length);
 
     // Бросаем каждый незамороженный кубик
-    unlockedDice.value.forEach(dice => {
+    // Перемещение кубиков с черепами не должно менять список текущего броска.
+    const rollingDice = [...unlockedDice.value];
+    rollingDice.forEach(dice => {
       if (dice instanceof Dice) {
 
         dice.currentFace = dice.roll();
@@ -143,6 +154,7 @@ export const useGameStore = defineStore("game", () => {
     });
     console.log('***************** Rolling dice finished');
     rerollCount.value++;
+    recordRoll(rollingDice);
 
     if (rerollCount.value === maxRerolls) {
       await handleAfterLastRoll();
@@ -150,14 +162,16 @@ export const useGameStore = defineStore("game", () => {
   }
      
   // Заморозка кубика
-  function freezeDice(dice) {
+  function freezeDice(dice, manual = true) {
     const index = unlockedDice.value.findIndex(d => d.id === dice.id);
     if (index !== -1) {
+      if (!dice.canBeLocked) return;
       if (dice instanceof Dice) {
         dice.lock(dice.currentFace);
       }
       unlockedDice.value.splice(index, 1);
       frozenDice.value.push(dice);
+      if (manual) trackDiceAction(dice, false, true);
       console.log(`Dice ${dice.id} frozen`);
     }
   }
@@ -176,14 +190,16 @@ export const useGameStore = defineStore("game", () => {
   }
 
   // Разморозка кубика
-  function unfreezeDice(dice) {
+  function unfreezeDice(dice, manual = true) {
     const index = frozenDice.value.findIndex(d => d.id === dice.id);
     if (index !== -1) {
+      if (!dice.canBeUnlocked) return;
       if (dice instanceof Dice) {
         dice.unlock();
       }
       frozenDice.value.splice(index, 1);
       unlockedDice.value.push(dice);
+      if (manual) trackDiceAction(dice, true, false);
       console.log(`Dice ${dice.id} unfrozen`);
     }
   }
@@ -201,9 +217,9 @@ export const useGameStore = defineStore("game", () => {
     if (clergyWithNewRoll.length > 0) {
       console.log(`Found ${clergyWithNewRoll.length} clergy dice with NewRoll`);
       // Замораживаем обычные кубики
-      unlockedDice.value.forEach(dice => {
+      [...unlockedDice.value].forEach(dice => {
         if (dice.diceType !== 3) {
-          freezeDice(dice);
+          freezeDice(dice, false);
         }
       });
     } else {
@@ -246,7 +262,7 @@ export const useGameStore = defineStore("game", () => {
     }
 
     // Размораживаем выбранный кубик
-    unfreezeDice(lockedDice);
+    unfreezeDice(lockedDice, false);
 
     console.log('NewRoll pair created:', pair);
   }
@@ -278,6 +294,7 @@ export const useGameStore = defineStore("game", () => {
     if (lockedDice instanceof Dice) {
       lockedDice.currentFace = lockedDice.roll();
     }
+    recordRoll([clergyDice, lockedDice], true);
 
     pair.isUsed = true;
 
@@ -294,8 +311,8 @@ export const useGameStore = defineStore("game", () => {
       }
     } else {
       // Если NewRoll не выпал, пара замораживается
-      freezeDice(clergyDice);
-      freezeDice(lockedDice);
+      freezeDice(clergyDice, false);
+      freezeDice(lockedDice, false);
       // Удаляем использованную пару
       newRollPairs.value.splice(pairIndex, 1);
     }
@@ -308,6 +325,8 @@ export const useGameStore = defineStore("game", () => {
       return;
     }
     console.log('Completing turn');
+    const changes = flushDiceActions();
+    if (changes.length) completedTurnActions.value.push({ turn: turnCount.value, changes });
 
     // Замораживаем все оставшиеся кубики
     unlockedDice.value.forEach(dice => {
@@ -320,8 +339,6 @@ export const useGameStore = defineStore("game", () => {
     unlockedDice.value = [];
     isRollingComplete.value = true;
 
-    // Увеличиваем счетчик ходов
-    turnCount.value++;
     rerollCount.value = 0;
     saveSessionToCookies();
     isTurnCompleted.value = true;
@@ -330,6 +347,10 @@ export const useGameStore = defineStore("game", () => {
 
   // Начать новый ход
   async function startNewTurn() {
+    if (pendingDiceActions.size) {
+      const changes = flushDiceActions();
+      if (changes.length) completedTurnActions.value.push({ turn: turnCount.value, changes });
+    }
     isTurnCompleted.value = false;
     console.log('Starting new turn');
 
@@ -347,6 +368,7 @@ export const useGameStore = defineStore("game", () => {
 
       frozenDice.value = [];
       unlockedDice.value = [...allDice.value];
+      newDice.value = [];
       rerollCount.value = 0;
       isRollingComplete.value = false;
       newRollPairs.value = [];
@@ -356,6 +378,43 @@ export const useGameStore = defineStore("game", () => {
     }
   }
   // Вспомогательные функции
+  function snapshotDice(dice) {
+    return {
+      id: dice.id, name: dice.name, diceType: dice.diceType, color: dice.color,
+      face: dice.currentFace ? { ...dice.currentFace, values: { ...dice.currentFace.values } } : null
+    };
+  }
+
+  function trackDiceAction(dice, initialFrozen, frozen) {
+    const initial = pendingDiceActions.get(dice.id)?.initialFrozen ?? initialFrozen;
+    if (initial === frozen) pendingDiceActions.delete(dice.id);
+    else pendingDiceActions.set(dice.id, { ...snapshotDice(dice), initialFrozen: initial, frozen });
+  }
+
+  function flushDiceActions() {
+    const changes = [...pendingDiceActions.values()];
+    pendingDiceActions.clear();
+    return changes;
+  }
+
+  function recordRoll(rolledDice, isExtra = false) {
+    const rolledIds = new Set(rolledDice.map(dice => dice.id));
+    const previousRolls = rollHistory.value.filter(entry => entry.turn === turnCount.value);
+    const roll = previousRolls.length + 1;
+    const previous = previousRolls.at(-1);
+    rollHistory.value.push({
+      turn: turnCount.value,
+      roll,
+      isExtra,
+      actionsBefore: flushDiceActions(),
+      dice: allDice.value.filter(dice => dice.currentFace).map(dice => ({
+        ...snapshotDice(dice),
+        wasRolled: rolledIds.has(dice.id),
+        originRoll: rolledIds.has(dice.id) ? roll : (previous?.dice.find(item => item.id === dice.id)?.originRoll ?? roll)
+      })).sort((a, b) => b.originRoll - a.originRoll)
+    });
+  }
+
   function generateSessionId() {
     return "session_" + Date.now() + "_" + Math.random().toString(36).substr(2, 9);
   }
@@ -371,6 +430,9 @@ export const useGameStore = defineStore("game", () => {
     allDice,
     frozenDice,
     unlockedDice,
+    newDice,
+    rollHistory,
+    completedTurnActions,
     rerollCount,
     turnCount,
     maxRerolls,

@@ -1,6 +1,6 @@
 <!-- components/ResourceCounter.vue -->
 <template>
-  <div class="resource-counter-panel">
+  <div class="resource-counter-panel era-panel">
     <!-- Заголовок с информацией о статусе -->
     <div class="counter-header">
       <h3>📊 Собранные ресурсы</h3>
@@ -12,6 +12,7 @@
     </div>
 
     <!-- Предупреждения о незавершенных выборах -->
+    <div class="resource-slots">
     <div v-if="pendingChoices.length > 0" class="pending-choices-warning">
       <div class="warning-icon">⚠️</div>
       <div class="warning-text">
@@ -44,8 +45,9 @@
       </div>
     </div>
 
-    <!-- Кнопка завершения хода -->
-    <div class="turn-actions" v-if="!isTurnCompleted">
+    </div>
+    <!-- Место для кнопки сохраняется после завершения хода. -->
+    <div class="turn-actions" :class="{ 'actions-hidden': isTurnCompleted }" :inert="isTurnCompleted">
       <button class="btn-complete-turn era-button"
               :class="{ 'btn-pulse': canCompleteTurn }"
               :disabled="!canCompleteTurn"
@@ -189,6 +191,9 @@
 
   // Текст статуса хода
   const turnStatusText = computed(() => {
+    if (props.isTurnCompleted) {
+      return '✅ Ход завершен';
+    }
     if (props.unlockedDice.length > 0) {
       return `🎲 Активных кубиков: ${props.unlockedDice.length}`;
     }
@@ -216,19 +221,19 @@
 
 <style scoped>
   .resource-counter-panel {
-    background: white;
-    border-radius: 16px;
-    padding: 20px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    min-width: 300px;
+    min-width: 0;
+    padding: 14px;
   }
 
   .counter-header {
+    min-height: 58px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 16px;
-    padding-bottom: 12px;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    flex-wrap: wrap;
+    gap: 6px;
     border-bottom: 2px solid #f0f0f0;
   }
 
@@ -296,21 +301,24 @@
   }
 
   /* Сетка ресурсов */
-  .resources-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-bottom: 20px;
-    max-height: 300px;
+  .resource-slots {
+    height: 260px;
     overflow-y: auto;
-    padding-right: 4px;
+  }
+
+  .resources-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+    grid-auto-rows: 32px;
+    align-content: start;
   }
 
   .resource-row {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 8px 12px;
+    gap: 4px;
+    padding: 4px;
     background: #f8f9fa;
     border-radius: 8px;
     transition: all 0.2s ease;
@@ -321,14 +329,15 @@
     }
 
   .resource-icon-cell {
-    width: 32px;
+    width: 22px;
+    flex-shrink: 0;
     display: flex;
     justify-content: center;
   }
 
   .resource-icon {
-    width: 28px;
-    height: 28px;
+    width: 22px;
+    height: 22px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -391,14 +400,16 @@
 
   .resource-name {
     flex: 1;
-    font-size: 14px;
+    font-size: 12px;
+    min-width: 0;
+    overflow-wrap: anywhere;
     font-weight: 500;
     color: #333;
   }
 
   .resource-count {
     position: relative;
-    min-width: 60px;
+    min-width: 24px;
     text-align: right;
     font-weight: 600;
     font-size: 16px;
@@ -423,9 +434,13 @@
 
   /* Кнопка завершения хода */
   .turn-actions {
-    margin-top: 16px;
-    padding-top: 16px;
+    margin-top: 10px;
+    padding-top: 10px;
     border-top: 2px solid #f0f0f0;
+  }
+
+  .actions-hidden {
+    visibility: hidden;
   }
 
   .btn-complete-turn {
@@ -434,36 +449,20 @@
     align-items: center;
     justify-content: center;
     gap: 8px;
-    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-    color: white;
-    border: none;
-    padding: 14px 20px;
-    border-radius: 10px;
+    padding: 8px 12px;
     font-size: 16px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s ease;
     opacity: 0.7;
   }
 
     .btn-complete-turn:not(:disabled) {
       opacity: 1;
-      box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
-    }
-
-    .btn-complete-turn:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(40, 167, 69, 0.4);
     }
 
     .btn-complete-turn:disabled {
-      background: #6c757d;
       cursor: not-allowed;
       opacity: 0.5;
-    }
-
-    .btn-complete-turn.btn-pulse {
-      animation: pulse-green 1.5s infinite;
     }
 
   .btn-icon {
@@ -526,7 +525,6 @@
   /* Адаптивность */
   @media (max-width: 768px) {
     .resource-counter-panel {
-      padding: 16px;
       min-width: auto;
     }
 
@@ -546,7 +544,7 @@
 
     .resource-count {
       font-size: 14px;
-      min-width: 50px;
+      min-width: 24px;
     }
 
     .btn-complete-turn {

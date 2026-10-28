@@ -1,7 +1,7 @@
 <!-- components/AddDiceModal.vue -->
 <template>
   <div class="modal-overlay" @click.self="$emit('close')">
-    <div class="modal-content">
+    <div class="modal-content era-panel">
       <h3>Получить новый кубик</h3>
 
       <div class="dice-types">
@@ -46,9 +46,6 @@
   }
 
   .modal-content {
-    background: white;
-    padding: 30px;
-    border-radius: 12px;
     max-width: 500px;
     width: 90%;
   }
@@ -61,25 +58,12 @@
   }
 
   .dice-type-btn {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border: none;
     padding: 12px;
-    border-radius: 6px;
     cursor: pointer;
-    transition: transform 0.3s;
   }
 
-    .dice-type-btn:hover {
-      transform: scale(1.05);
-    }
-
   .btn-close {
-    background: #6c757d;
-    color: white;
-    border: none;
     padding: 10px 20px;
-    border-radius: 6px;
     cursor: pointer;
     margin-top: 20px;
   }

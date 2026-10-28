@@ -1,7 +1,7 @@
 <!-- components/BindNewRollModal.vue -->
 <template>
     <div class="modal-overlay" @click.self="$emit('close')">
-        <div class="modal-content">
+        <div class="modal-content era-panel">
             <h3>Привязать NewRoll к замороженному кубику</h3>
 
             <div class="clergy-info">
@@ -111,9 +111,6 @@
     }
 
     .modal-content {
-        background: white;
-        padding: 30px;
-        border-radius: 12px;
         max-width: 600px;
         width: 100%;
         max-height: 90vh;
@@ -211,21 +208,11 @@
     }
 
     .btn-bind {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
         padding: 12px 24px;
-        border-radius: 6px;
         font-size: 16px;
         font-weight: bold;
         cursor: pointer;
-        transition: all 0.3s;
     }
-
-        .btn-bind:hover:not(:disabled) {
-            transform: scale(1.05);
-            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
-        }
 
         .btn-bind:disabled {
             opacity: 0.5;
@@ -233,27 +220,14 @@
         }
 
     .btn-cancel {
-        background: #6c757d;
-        color: white;
-        border: none;
         padding: 12px 24px;
-        border-radius: 6px;
         font-size: 16px;
         font-weight: bold;
         cursor: pointer;
-        transition: background 0.3s;
     }
 
-        .btn-cancel:hover {
-            background: #5a6268;
-        }
-
     .btn-close {
-        background: #6c757d;
-        color: white;
-        border: none;
         padding: 10px 20px;
-        border-radius: 6px;
         cursor: pointer;
         margin-top: 20px;
     }

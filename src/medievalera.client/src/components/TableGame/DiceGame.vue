@@ -32,11 +32,12 @@
                          :is-rolling-complete="store.isRollingComplete"
                          :is-turn-completed="store.isTurnCompleted"
                          @complete-turn="completeTurn" />
+        <RollHistory :entries="store.rollHistory" :completed-actions="store.completedTurnActions" />
       </div>
       <!-- Коллекции кубиков -->
       <div class="dice-collections">
         <!-- Активные кубики -->
-        <DiceCollection title="Активные кубики"
+        <DiceCollection title="Доступные для броска"
                         :dice-collection="store.unlockedDice"
                         :is-frozen="false"
                         :isRollingComplete="store.isRollingComplete"
@@ -44,12 +45,16 @@
                         @bind-new-roll="openBindingModal" />
 
         <!-- Замороженные кубики -->
-        <DiceCollection title="Замороженные кубики"
+        <DiceCollection title="Бросок завершен"
                         :dice-collection="store.frozenDice"
                         :is-frozen="true"
                         :isRollingComplete="store.isRollingComplete"
                         :can-reroll="store.canReroll"
                         @unfreeze-dice="unfreezeDice" />
+
+        <DiceCollection title="Новые кубики"
+                        :dice-collection="store.newDice"
+                        :actions-enabled="false" />
       </div>
 
       
@@ -81,7 +86,7 @@
   import AddDiceModal from './AddDiceModal.vue';
   import BindNewRollModal from './BindNewRollModal.vue';
   import ResourceCounter from './ResourceCounter.vue';
-  import { diceIcons } from './DiceResources';
+  import RollHistory from './RollHistory.vue';
 
   const store = useGameStore();
   const showAddDiceModal = ref(false);
@@ -194,29 +199,45 @@
 </script>
 
 <style scoped>
+  .dice-game {
+    width: 100%;
+    min-width: 0;
+  }
+
   .game-container {
     display: grid;
-    grid-template-columns: 1fr 300px;
-    gap: 20px;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    grid-template-areas: 'player sidebar' 'dice sidebar';
+    grid-template-rows: auto 1fr;
+    align-items: start;
+    gap: 12px;
     max-width: 1700px;
     margin: 0 auto;
   }
 
   .dice-collections {
-    grid-column: 1 / -1;
+    grid-area: dice;
+    display: grid;
+    gap: 12px;
+    min-width: 0;
+    align-content: start;
   }
 
   .game-sidebar {
-    grid-column: 2;
+    grid-area: sidebar;
+    display: grid;
+    gap: 12px;
+    min-width: 0;
   }
 
-  @media (max-width: 1200px) {
+  .game-container > :first-child {
+    grid-area: player;
+  }
+
+  @media (max-width: 900px) {
     .game-container {
       grid-template-columns: 1fr;
-    }
-
-    .game-sidebar {
-      grid-column: 1;
+      grid-template-areas: 'player' 'dice' 'sidebar';
     }
   }
 </style>

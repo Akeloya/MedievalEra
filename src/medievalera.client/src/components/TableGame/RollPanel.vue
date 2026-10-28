@@ -1,6 +1,6 @@
 <!-- components/RollPanel.vue -->
 <template>
-  <div class="roll-panel">
+  <div class="roll-panel era-panel">
     <div class="roll-info">
       <div v-if="hasExtraRolls" class="extra-rolls">
         <h4>✨ Дополнительные броски (NewRoll)</h4>
@@ -103,16 +103,13 @@
 
 <style scoped>
   .roll-panel {
-    background: white;
-    border-radius: 16px;
-    padding: 24px;
-    margin-top: 24px;
+    padding: 10px;
+    width: 100%;
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
     flex-wrap: wrap;
     gap: 20px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   }
 
   .roll-info {
@@ -199,28 +196,14 @@
     }
 
   .btn-extra {
-    background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
-    color: white;
-    border: none;
     padding: 8px 16px;
-    border-radius: 20px;
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
     display: flex;
     align-items: center;
     gap: 6px;
-    transition: all 0.3s ease;
   }
-
-    .btn-extra:hover {
-      transform: scale(1.05);
-      box-shadow: 0 4px 12px rgba(155, 89, 182, 0.4);
-    }
-
-    .btn-extra:active {
-      transform: scale(0.98);
-    }
 
   .no-pairs {
     color: #666;
@@ -237,13 +220,10 @@
   }
 
   .btn-roll, .btn-complete, .btn-add {
-    border: none;
-    padding: 14px 28px;
-    border-radius: 12px;
+    padding: 8px 14px;
     font-size: 16px;
     font-weight: bold;
     cursor: pointer;
-    transition: all 0.3s ease;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -254,51 +234,10 @@
     font-size: 20px;
   }
 
-  .btn-roll {
-    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-    color: white;
-    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
-  }
-
-    .btn-roll:hover:not(:disabled) {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(40, 167, 69, 0.4);
-    }
-
-  .btn-roll-warning {
-    background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
-    box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
-    animation: pulse 1.5s infinite;
-  }
-
   .btn-roll:disabled {
     opacity: 0.5;
     cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
   }
-
-  .btn-complete {
-    background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
-    color: #2c3e50;
-    box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
-  }
-
-    .btn-complete:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(255, 193, 7, 0.4);
-    }
-
-  .btn-add {
-    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
-    color: white;
-    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
-  }
-
-    .btn-add:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 16px rgba(0, 123, 255, 0.4);
-    }
 
   @keyframes pulse {
     0% {
@@ -318,7 +257,6 @@
   @media (max-width: 768px) {
     .roll-panel {
       flex-direction: column;
-      padding: 20px;
     }
 
     .roll-info {

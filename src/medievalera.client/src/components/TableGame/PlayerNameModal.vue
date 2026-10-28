@@ -1,7 +1,7 @@
 <!-- components/PlayerNameModal.vue -->
 <template>
   <div class="modal-overlay">
-    <div class="modal-content">
+    <div class="modal-content era-panel">
       <h2>Добро пожаловать в игру!</h2>
       <p>Введите ваше имя, чтобы продолжить</p>
 
@@ -50,9 +50,6 @@
   }
 
   .modal-content {
-    background: white;
-    padding: 40px;
-    border-radius: 12px;
     max-width: 400px;
     width: 90%;
     text-align: center;
@@ -73,18 +70,9 @@
     }
 
   .btn-start {
-    background: #667eea;
-    color: white;
-    border: none;
     padding: 12px 24px;
-    border-radius: 6px;
     font-size: 16px;
     font-weight: bold;
     cursor: pointer;
-    transition: background 0.3s;
   }
-
-    .btn-start:hover {
-      background: #5a67d8;
-    }
 </style>

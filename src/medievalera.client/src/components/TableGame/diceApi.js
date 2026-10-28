@@ -1,4 +1,4 @@
-import { Dice } from './Dice';
+import { Dice } from './Dice.js';
 
 class DiceApiService {
     constructor() {
