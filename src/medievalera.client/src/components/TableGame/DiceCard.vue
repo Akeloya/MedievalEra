@@ -47,19 +47,19 @@
     <div v-if="showActions" class="action-buttons">
       <button v-if="canFreeze && !isFrozen"
               @click="$emit('freeze')"
-              class="action-btn freeze"
+              class="action-btn freeze era-button"
               title="Заморозить">
         ❄️
       </button>
       <button v-if="canUnfreeze && isFrozen"
               @click="$emit('unfreeze')"
-              class="action-btn unfreeze"
+              class="action-btn unfreeze era-button"
               title="Разморозить">
         🔥
       </button>
       <button v-if="canBindNewRoll && hasNewRoll && !isFrozen"
               @click="$emit('bind-new-roll')"
-              class="action-btn bind"
+              class="action-btn bind era-button"
               title="Перебросить">
         ⚡
       </button>

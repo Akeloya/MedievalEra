@@ -8,12 +8,12 @@
         <button v-for="type in diceTypes"
                 :key="type.value"
                 @click="$emit('add-dice', type.value)"
-                class="dice-type-btn">
+                class="dice-type-btn era-button">
           {{ type.label }}
         </button>
       </div>
 
-      <button @click="$emit('close')" class="btn-close">
+      <button @click="$emit('close')" class="btn-close era-button">
         Закрыть
       </button>
     </div>

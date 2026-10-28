@@ -17,7 +17,7 @@
 
                 <div v-if="frozenDice.length === 0" class="empty-state">
                     <p>Нет доступных замороженных кубиков</p>
-                    <button @click="$emit('close')" class="btn-close">
+                    <button @click="$emit('close')" class="btn-close era-button">
                         Закрыть
                     </button>
                 </div>
@@ -41,11 +41,11 @@
 
             <div class="modal-actions" v-if="selectedDice">
                 <button @click="handleBind"
-                        class="btn-bind"
+                        class="btn-bind era-button"
                         :disabled="!selectedDice">
                     Привязать и выполнить бросок
                 </button>
-                <button @click="$emit('close')" class="btn-cancel">
+                <button @click="$emit('close')" class="btn-cancel era-button">
                     Отмена
                 </button>
             </div>

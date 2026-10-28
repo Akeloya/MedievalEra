@@ -100,3 +100,86 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* Shared parchment UI used by score and profile pages. */
+.era-button {
+  padding: 10px 22px;
+  font-family: var(--font-main);
+  font-size: 1rem;
+  font-weight: bold;
+  letter-spacing: 0.3px;
+  color: #fff8dc;
+  background: linear-gradient(180deg, #8a6844 0%, #6d4c2f 100%);
+  border: 2px solid #d2b48c;
+  border-radius: 8px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.era-button:hover:not(:disabled) {
+  background: linear-gradient(180deg, #a07c4f 0%, #7d5836 100%);
+  box-shadow: 0 5px 12px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+.era-button:active:not(:disabled) {
+  transform: translateY(1px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
+}
+
+.era-button:focus-visible {
+  outline: 3px solid rgba(243, 146, 0, 0.6);
+  outline-offset: 2px;
+}
+
+.era-button:disabled {
+  cursor: wait;
+}
+
+.era-input {
+  padding: 9px 12px;
+  font-family: var(--font-main);
+  font-size: 1rem;
+  color: #3f3020;
+  background: #fffdf6;
+  border: 2px solid #c9b48c;
+  border-radius: 8px;
+  box-shadow: inset 0 2px 4px rgba(90, 64, 32, 0.14);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.era-input::placeholder {
+  color: #9c8a6f;
+  font-style: italic;
+}
+
+.era-input:focus {
+  outline: none;
+  border-color: var(--era-orange);
+  box-shadow: 0 0 0 3px rgba(243, 146, 0, 0.25), inset 0 2px 4px rgba(90, 64, 32, 0.12);
+}
+
+.era-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: #3f3020;
+}
+
+.era-table th,
+.era-table td {
+  padding: 10px 12px;
+  border: 1px solid #d8c6a2;
+  text-align: left;
+  vertical-align: top;
+}
+
+.era-table th {
+  background: linear-gradient(180deg, #e7d7b4 0%, #dcc79b 100%);
+  color: #4a3218;
+  font-weight: bold;
+}
+
+.era-table tbody tr:nth-child(even) {
+  background: rgba(246, 238, 219, 0.6);
+}

@@ -27,13 +27,13 @@
 
     <div class="header-actions">
       <button @click="$emit('new-turn')"
-              class="btn-new-turn"
+              class="btn-new-turn era-button"
               :disabled="!isRollingComplete && rerollCount === 0"
               :title="getNewTurnTooltip">
         <span class="btn-icon">🎲</span>
         Новый ход
       </button>
-      <button @click="$emit('reset-game')" class="btn-reset">
+      <button @click="$emit('reset-game')" class="btn-reset era-button">
         <span class="btn-icon">🔄</span>
         Сброс игры
       </button>

@@ -4,18 +4,28 @@
     <p class="game-type-note">
       Тип игры: <strong>Настольная</strong>
     </p>
-    <table class="custom-table">
+    <table class="custom-table era-table">
       <thead>
         <tr>
           <th>Здание / результат</th>
           <th>Очки</th>
           <th v-for="player in players" :key="player.playerNumber" class="header-group">
             <label :for="`player-name-${player.playerNumber}`">Игрок {{ player.playerNumber }}</label>
-            <input :id="`player-name-${player.playerNumber}`"
-                   v-model.trim="player.playerName"
-                   class="player-name"
-                   maxlength="50"
-                   required>
+            <div class="player-name-control">
+              <input :id="`player-name-${player.playerNumber}`"
+                     v-model.trim="player.playerName"
+                     :class="['player-name', 'era-input', `player-status-${playerNameStatuses[player.playerNumber] ?? 'unknown'}`]"
+                     maxlength="50"
+                     required>
+              <button v-if="player.playerNumber === players.length && players.length < 4"
+                      type="button"
+                      class="era-button add-player-button"
+                      aria-label="Добавить игрока"
+                      title="Добавить игрока"
+                      @click="addPlayer">
+                +
+              </button>
+            </div>
           </th>
         </tr>
       </thead>
@@ -23,19 +33,40 @@
       <tbody>
         <tr v-for="building in buildings" :key="building.key" class="row-color-blue">
           <td>{{ building.label }}</td>
-          <td></td>
+          <td>
+            <span class="score-indicator">
+              <strong>{{ building.points }}</strong>
+              <ScoreIcon :name="buildingIcon(building.key)" />
+            </span>
+          </td>
           <td v-for="player in players" :key="player.playerNumber">
             <div class="building-inputs">
-              <label title="Построено">
-                <span class="building-icon" role="img" aria-label="Построено">🔨</span>
-                <input v-model.number="player.buildings[building.key].count"
-                       type="number" min="0" step="1" :max="availableFor(player, building)" required>
+              <label v-if="building.key === 'Tower'" class="wall-completed-toggle" title="Стена завершена">
+                <span class="building-input-field wall-completion-field">
+                  <span class="building-watermark" aria-hidden="true">🏰</span>
+                  <input v-model="player.wallCompleted" class="wall-completion-checkbox" type="checkbox"
+                         aria-label="Стена завершена" @change="onWallCompletedChange(player)">
+                </span>
+                <span>Стена завершена</span>
               </label>
-              <label title="В стене">
-                <span class="building-icon" role="img" aria-label="В стене">🏰</span>
-                <input v-model.number="player.buildings[building.key].insideWallCount"
-                       type="number" min="0" step="1"
-                       :max="player.buildings[building.key].count" required>
+              <label title="Всего построено">
+                <span class="building-input-field">
+                  <span class="building-watermark" aria-hidden="true">🔨</span>
+                  <input class="era-input" v-model.number="player.buildings[building.key].count"
+                         type="number" min="0" step="1" :max="availableFor(player, building)"
+                         aria-label="Общее количество построенных зданий"
+                         @input="syncInsideWallCount(player, building)" required>
+                </span>
+              </label>
+              <label v-if="player.wallCompleted && building.key !== 'Tower'" title="В стене">
+                <span class="building-input-field">
+                  <span class="building-watermark" aria-hidden="true">🏰</span>
+                  <input class="era-input" :value="player.buildings[building.key].insideWallCount"
+                         type="number" min="0" step="1"
+                         :max="maxInsideWallCount(player, building)"
+                         aria-label="Количество зданий в стене"
+                         @input="updateInsideWallCount(player, building, $event.target.value)" required>
+                </span>
               </label>
             </div>
             <strong>{{ buildingTotal(player, building) }}</strong>
@@ -44,11 +75,22 @@
 
         <tr v-for="bonus in quantityBonuses" :key="bonus.key" class="row-color-yellow">
           <td>{{ bonus.label }}</td>
-          <td>1 за единицу</td>
+          <td>
+            <span class="score-indicator">
+              <strong>{{ bonus.points }}</strong>
+              <ScoreIcon v-if="bonus.icon" :name="bonus.icon" />
+              <span v-else-if="bonus.key === 'guildResources'" class="resource-icons" aria-label="Еда, камень, древесина и товары">
+                <span v-for="resource in guildResourceIcons" :key="resource">{{ diceIcons[resource] }}</span>
+              </span>
+              <span v-else-if="bonus.key === 'universityCultureLevel'" class="resource-icons" aria-label="Культура">
+                {{ diceIcons.culture }}
+              </span>
+            </span>
+          </td>
           <td v-for="player in players" :key="player.playerNumber">
             <label v-if="bonus.key !== 'cathedralDiceCount' && bonusAvailable(player, bonus.key)">
               {{ bonus.inputLabel }}
-              <input v-model.number="player[bonus.key]"
+              <input class="era-input" v-model.number="player[bonus.key]"
                      type="number" min="0" step="1"
                      :max="bonus.key === 'marketBonus' ? builtCount(player, 'Market') * 8 : undefined" required>
             </label>
@@ -58,19 +100,26 @@
 
         <tr class="row-color-green">
           <td>Наибольшая область, окруженная стеной</td>
-          <td>+10 очков лидеру(ам)</td>
+          <td>
+            <span class="score-indicator"><strong>+10</strong><ScoreIcon name="point" /></span>
+            <small>лидеру(ам)</small>
+          </td>
           <td v-for="player in players" :key="player.playerNumber">
-            <label>
+            <label v-if="player.wallCompleted">
               Точек в области
-              <input v-model.number="player.walledAreaSize"
+              <input class="era-input" v-model.number="player.walledAreaSize"
                      type="number" min="0" step="1" required>
             </label>
+            <span v-else>—</span>
             <strong>Бонус: {{ walledAreaBonus(player) }}</strong>
           </td>
         </tr>
         <tr class="row-color-green">
           <td>Наиболее развитая культура</td>
-          <td>+5 очков лидеру(ам)</td>
+          <td>
+            <span class="score-indicator"><strong>+5</strong><ScoreIcon name="book" /></span>
+            <small>лидеру(ам)</small>
+          </td>
           <td v-for="player in players" :key="player.playerNumber">
             <strong>Бонус: {{ cultureBonus(player) }}</strong>
           </td>
@@ -86,9 +135,11 @@
 
         <tr class="row-color-green">
           <td>Очки бедствий</td>
-          <td></td>
+          <td>
+            <span class="score-indicator"><strong>−1</strong><span class="resource-icons" aria-label="Череп">{{ diceIcons.skull }}</span></span>
+          </td>
           <td v-for="player in players" :key="player.playerNumber">
-            <input v-model.number="player.disasterPoints"
+            <input class="era-input" v-model.number="player.disasterPoints"
                    type="number" min="0" step="1" required>
           </td>
         </tr>
@@ -114,7 +165,7 @@
         </tr>
       </tbody>
     </table>
-    <button type="submit" :disabled="saving || !buildingsLoaded">
+    <button class="era-button" type="submit" :disabled="saving || !buildingsLoaded">
       {{ saving ? 'Сохранение...' : 'Сохранить результаты' }}
     </button>
     <p v-if="message" :class="{ error: isError }" role="status">{{ message }}</p>
@@ -126,6 +177,10 @@
 
 <script setup>
 import { onMounted, reactive, ref, watch } from 'vue'
+import ScoreIcon from './ScoreIcon.vue'
+import { diceIcons } from '@/components/TableGame/DiceResources'
+
+const emit = defineEmits(['saved'])
 
 const buildings = ref([])
 const buildingsLoaded = ref(false)
@@ -136,12 +191,8 @@ onMounted(async () => {
     const response = await fetch('/api/Buildings')
     if (!response.ok) throw new Error(`Ошибка сервера: ${response.status}`)
     const gameSet = await response.json()
-    for (const player of players) {
-      player.buildings = Object.fromEntries(gameSet.map(building => [
-        building.key, { count: 0, insideWallCount: 0 }
-      ]))
-    }
     buildings.value = gameSet
+    for (const player of players) initializePlayerBuildings(player)
     buildingsLoaded.value = true
     refreshAutomaticBonuses()
   } catch {
@@ -150,12 +201,32 @@ onMounted(async () => {
 })
 
 const quantityBonuses = [
-  { key: 'marketBonus', label: 'Бонус рынка', inputLabel: 'Очки' },
-  { key: 'guildResources', label: 'Гильдия: оставшиеся ресурсы', inputLabel: 'Ресурсы' },
-  { key: 'universityCultureLevel', label: 'Университет: уровень культуры', inputLabel: 'Уровень' },
-  { key: 'cathedralDiceCount', label: 'Собор: количество кубиков', inputLabel: 'Кубики' },
-  { key: 'cultureIcons', label: 'Культура: количество иконок', inputLabel: 'Иконки' }
+  { key: 'marketBonus', label: 'Бонус рынка', inputLabel: 'Очки', points: 8, icon: 'chessboard' },
+  { key: 'guildResources', label: 'Гильдия: оставшиеся ресурсы', inputLabel: 'Ресурсы', points: 1 },
+  { key: 'universityCultureLevel', label: 'Университет: уровень культуры', inputLabel: 'Уровень', points: 1 },
+  { key: 'cathedralDiceCount', label: 'Собор: количество кубиков', inputLabel: 'Кубики', points: 1, icon: 'die' },
+  { key: 'cultureIcons', label: 'Культура: количество иконок', inputLabel: 'Иконки', points: 1, icon: 'book' }
 ]
+
+const guildResourceIcons = ['meal', 'stone', 'wood', 'goods']
+const buildingIcons = {
+  Tower: 'tower',
+  House: 'house',
+  Farm: 'farm',
+  Church: 'church',
+  Monastery: 'monastery',
+  Cathedral: 'cathedral',
+  CityHouse: 'city-house',
+  Guild: 'guild',
+  Market: 'market',
+  Hospital: 'hospital',
+  Sawmill: 'sawmill',
+  University: 'university'
+}
+
+function buildingIcon(key) {
+  return buildingIcons[key] ?? 'point'
+}
 
 const buildingForBonus = {
   marketBonus: 'Market',
@@ -163,18 +234,63 @@ const buildingForBonus = {
   universityCultureLevel: 'University'
 }
 
-const players = reactive(Array.from({ length: 4 }, (_, index) => ({
-  playerNumber: index + 1,
-  playerName: `Игрок ${index + 1}`,
-  buildings: {},
-  marketBonus: 0,
-  guildResources: 0,
-  universityCultureLevel: 0,
-  cathedralDiceCount: 0,
-  cultureIcons: 0,
-  walledAreaSize: 0,
-  disasterPoints: 0
-})))
+function createPlayer(playerNumber) {
+  return {
+    playerNumber,
+    playerName: `Игрок ${playerNumber}`,
+    buildings: {},
+    marketBonus: 0,
+    guildResources: 0,
+    universityCultureLevel: 0,
+    cathedralDiceCount: 0,
+    cultureIcons: 0,
+    walledAreaSize: 0,
+    disasterPoints: 0,
+    wallCompleted: false
+  }
+}
+
+function initializePlayerBuildings(player) {
+  player.buildings = Object.fromEntries(buildings.value.map(building => [
+    building.key, { count: 0, insideWallCount: 0 }
+  ]))
+}
+
+const players = reactive([createPlayer(1), createPlayer(2)])
+const playerNameStatuses = reactive({})
+let nameStatusRequestId = 0
+let nameStatusTimer
+
+function addPlayer() {
+  if (players.length >= 4) return
+
+  const player = createPlayer(players.length + 1)
+  if (buildingsLoaded.value) initializePlayerBuildings(player)
+  players.push(player)
+}
+
+watch(() => players.map(player => ({ number: player.playerNumber, name: player.playerName })), entries => {
+  const requestId = ++nameStatusRequestId
+  clearTimeout(nameStatusTimer)
+  nameStatusTimer = setTimeout(async () => {
+    const statuses = await Promise.all(entries.map(async ({ number, name }) => {
+      const normalizedName = name.trim()
+      if (!normalizedName) return [number, 'unknown']
+
+      try {
+        const response = await fetch(`/api/PlayerProfile/name-status?name=${encodeURIComponent(normalizedName)}`)
+        if (!response.ok) return [number, 'unknown']
+        const result = await response.json()
+        return [number, result.status]
+      } catch {
+        return [number, 'unknown']
+      }
+    }))
+
+    if (requestId !== nameStatusRequestId) return
+    for (const [number, status] of statuses) playerNameStatuses[number] = status
+  }, 300)
+}, { immediate: true, deep: true })
 
 const saving = ref(false)
 const message = ref('')
@@ -194,7 +310,42 @@ onMounted(async () => {
 
 function buildingTotal(player, building) {
   const score = player.buildings[building.key]
-  return (building.points ?? 0) * (Number(score.count || 0) + Number(score.insideWallCount || 0))
+  const insideWallCount = building.key === 'Tower'
+    ? Number(score.count || 0)
+    : player.wallCompleted ? Number(score.insideWallCount || 0) : 0
+  return (building.points ?? 0) * (Number(score.count || 0) + insideWallCount)
+}
+
+function syncInsideWallCount(player, building) {
+  const score = player.buildings[building.key]
+  score.insideWallCount = Math.min(Number(score.insideWallCount || 0), Number(score.count || 0))
+}
+
+function maxInsideWallCount(player, building) {
+  const score = player.buildings[building.key]
+  return Math.max(0, Number(score.insideWallCount || 0) + availableFor(player, building) - Number(score.count || 0))
+}
+
+function updateInsideWallCount(player, building, value) {
+  const score = player.buildings[building.key]
+  const current = Number(score.insideWallCount || 0)
+  const requested = Math.max(0, Math.floor(Number(value) || 0))
+
+  if (requested > current) {
+    const capacity = Math.max(0, availableFor(player, building) - Number(score.count || 0))
+    const increase = Math.min(requested - current, capacity)
+    score.insideWallCount = current + increase
+    score.count = Number(score.count || 0) + increase
+  } else {
+    score.insideWallCount = Math.min(requested, Number(score.count || 0))
+  }
+}
+
+function onWallCompletedChange(player) {
+  if (player.wallCompleted) return
+
+  player.walledAreaSize = 0
+  for (const score of Object.values(player.buildings)) score.insideWallCount = 0
 }
 
 function builtCount(player, key) {
@@ -275,6 +426,7 @@ function cultureBonus(player) {
 }
 
 function walledAreaBonus(player) {
+  if (!player.wallCompleted) return 0
   return awardForHighest('walledAreaSize', player, 10)
 }
 
@@ -315,15 +467,18 @@ async function saveScore() {
       buildings: buildings.value.map(building => ({
         building: building.id,
         count: Number(player.buildings[building.key].count || 0),
-        insideWallCount: Number(player.buildings[building.key].insideWallCount || 0)
+        insideWallCount: building.key === 'Tower'
+          ? Number(player.buildings[building.key].count || 0)
+          : player.wallCompleted ? Number(player.buildings[building.key].insideWallCount || 0) : 0
       })),
       marketBonus: bonusValue(player, 'marketBonus'),
       guildResources: Number(player.guildResources || 0),
       universityCultureLevel: Number(player.universityCultureLevel || 0),
       cathedralDiceCount: cathedralDiceCount(player),
       cultureIcons: Number(player.cultureIcons || 0),
-      walledAreaSize: Number(player.walledAreaSize || 0),
-      disasterPoints: Number(player.disasterPoints || 0)
+      walledAreaSize: player.wallCompleted ? Number(player.walledAreaSize || 0) : 0,
+      disasterPoints: Number(player.disasterPoints || 0),
+      wallCompleted: player.wallCompleted
     }))
   }
 
@@ -340,6 +495,7 @@ async function saveScore() {
 
     const result = await response.json()
     message.value = `Результаты сохранены (игра №${result.id}).`
+    emit('saved', result.id)
   } catch (error) {
     isError.value = true
     message.value = `Не удалось сохранить результаты: ${error.message}`
@@ -365,24 +521,11 @@ async function saveScore() {
 
   .custom-table th,
   .custom-table td {
-    border: 1px solid #c9b48c;
-    padding: 8px 12px;
     text-align: center;
     vertical-align: middle;
   }
-  .custom-table input[type="number"],
-  .custom-table input.player-name {
-    box-sizing: border-box;
-    padding: 5px 6px;
-    font-family: var(--font-main);
-    font-size: 13px;
-    color: #3f3020;
-    background: #fffdf6;
-    border: 1px solid #c2ab80;
-    border-radius: 5px;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-  }
   .custom-table input[type="number"] {
+    box-sizing: border-box;
     max-width: 80px;
     width: 100%;
   }
@@ -392,19 +535,55 @@ async function saveScore() {
     max-width: 150px;
     width: 100%;
   }
-  .custom-table input:focus {
-    outline: none;
-    border-color: var(--era-orange);
-    box-shadow: 0 0 0 2px rgba(243, 146, 0, 0.28);
+  .player-name-control {
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 6px;
+  }
+  .custom-table .player-name-control input.player-name {
+    min-width: 0;
+    margin-top: 6px;
+  }
+  .custom-table input.player-name.player-status-unknown {
+    background-color: #fffdf6;
+  }
+  .custom-table input.player-name.player-status-offline {
+    background-color: #dcecf8;
+  }
+  .custom-table input.player-name.player-status-registered {
+    background-color: #e1f1dc;
+  }
+  .add-player-button {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 34px;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    font-size: 1.4rem;
+    line-height: 1;
   }
   .building-inputs {
     display: flex;
     justify-content: center;
     gap: 8px;
   }
-  .building-icon {
-    font-size: 18px;
+  .building-input-field {
+    position: relative;
+    display: inline-flex;
+    width: 58px;
+    flex: 0 0 58px;
+  }
+  .building-watermark {
+    position: absolute;
+    z-index: 1;
+    top: 50%;
+    left: 5px;
+    opacity: 0.32;
+    font-size: 15px;
     line-height: 1;
+    transform: translateY(-50%);
+    pointer-events: none;
   }
   .building-inputs label,
   .custom-table td label {
@@ -418,13 +597,92 @@ async function saveScore() {
     flex-direction: row;
     flex-shrink: 0;
   }
-  .custom-table .building-inputs input[type="number"] {
-    width: 45px;
-    flex: 0 0 45px;
+  .custom-table .building-inputs .building-input-field input[type="number"] {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    height: 34px;
+    padding: 5px 5px 5px 23px;
+    color: #2d2117;
+    font-size: 14px;
+    font-weight: bold;
+    text-align: right;
+    background: rgba(255, 253, 246, 0.88);
+    border: 1px solid #bda77d;
+    border-radius: 6px;
+    box-shadow: inset 0 1px 3px rgba(90, 64, 32, 0.12);
+  }
+  .custom-table .building-inputs .building-input-field input[type="number"]:focus {
+    border-color: var(--era-orange);
+    box-shadow: 0 0 0 2px rgba(243, 146, 0, 0.28);
+  }
+  .custom-table .wall-completed-toggle {
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .wall-completion-field {
+    height: 34px;
+  }
+  .wall-completion-checkbox {
+    position: absolute;
+    z-index: 2;
+    inset: 0;
+    width: 100%;
+    height: 34px;
+    margin: 0;
+    appearance: none;
+    background: rgba(255, 253, 246, 0.88);
+    border: 1px solid #bda77d;
+    border-radius: 6px;
+    box-shadow: inset 0 1px 3px rgba(90, 64, 32, 0.12);
+    cursor: pointer;
+  }
+  .wall-completion-checkbox:checked {
+    background: rgba(225, 241, 220, 0.78);
+  }
+  .wall-completion-checkbox:checked::after {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    color: #3d5128;
+    content: '✓';
+    font-size: 19px;
+    font-weight: bold;
+    line-height: 1;
+    transform: translateY(-55%);
+  }
+  .wall-completion-checkbox:focus-visible {
+    outline: 2px solid var(--era-orange);
+    outline-offset: 2px;
   }
   .custom-table td strong {
     display: block;
     margin-top: 4px;
+  }
+  .score-indicator {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+  .score-indicator > strong {
+    margin: 0;
+    color: #4a3218;
+    font-size: 1rem;
+  }
+  .resource-icons {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    font-size: 18px;
+    line-height: 1;
+    white-space: nowrap;
   }
   .title-cell {
     min-width: 130px;
@@ -440,31 +698,15 @@ async function saveScore() {
   }
   form > button {
     margin-top: 16px;
-    padding: 10px 22px;
-    font-family: var(--font-main);
-    font-size: 1rem;
-    font-weight: bold;
-    letter-spacing: 0.3px;
-    color: #fff8dc;
     background: linear-gradient(180deg, #55703a 0%, #3d5128 100%);
-    border: 2px solid #d2b48c;
-    border-radius: 8px;
-    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-    cursor: pointer;
-    transition: background 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
   }
   form > button:hover:not(:disabled) {
     background: linear-gradient(180deg, #648345 0%, #4a6230 100%);
-    box-shadow: 0 5px 12px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.25);
     transform: translateY(-1px);
   }
   form > button:active:not(:disabled) {
     transform: translateY(1px);
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.35);
-  }
-  form > button:focus-visible {
-    outline: 3px solid rgba(243, 146, 0, 0.6);
-    outline-offset: 2px;
   }
   .game-type-note {
     display: inline-flex;

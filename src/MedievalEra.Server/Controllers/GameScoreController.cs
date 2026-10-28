@@ -30,10 +30,11 @@ namespace MedievalEra.Server.Controllers
                 return BadRequest("Неизвестный тип игры.");
             }
 
-            if (request.Players is null || request.Players.Count != 4 ||
-                request.Players.Select(player => player.PlayerNumber).Order().SequenceEqual([1, 2, 3, 4]) is false)
+            if (request.Players is null || request.Players.Count is < 2 or > 4 ||
+                request.Players.Select(player => player.PlayerNumber).Order()
+                    .SequenceEqual(Enumerable.Range(1, request.Players.Count)) is false)
             {
-                return BadRequest("Необходимо передать результаты четырех игроков с номерами от 1 до 4.");
+                return BadRequest("Необходимо передать результаты от двух до четырех игроков с номерами по порядку.");
             }
 
             var score = new GameScore { GameType = request.GameType };
@@ -86,13 +87,19 @@ namespace MedievalEra.Server.Controllers
                     return BadRequest($"Некорректные данные игрока {input.PlayerNumber}.");
                 }
 
-                var buildings = input.Buildings.Select(building => new BuildingScore
+                var buildings = input.Buildings.Select(building =>
                 {
-                    Building = building.Building,
-                    Count = building.Count,
-                    InsideWallCount = building.InsideWallCount,
-                    Points = (factory.Get(building.Building).Score ?? 0) *
-                             (building.Count + building.InsideWallCount)
+                    var insideWallCount = building.Building == Buildings.Tower
+                        ? building.Count
+                        : input.WallCompleted == false ? 0 : building.InsideWallCount;
+                    return new BuildingScore
+                    {
+                        Building = building.Building,
+                        Count = building.Count,
+                        InsideWallCount = insideWallCount,
+                        Points = (factory.Get(building.Building).Score ?? 0) *
+                                 (building.Count + insideWallCount)
+                    };
                 }).ToList();
 
                 int BuiltCount(Buildings type) => input.Buildings
@@ -144,7 +151,7 @@ namespace MedievalEra.Server.Controllers
                     UniversityCultureLevel = hasUniversity ? input.UniversityCultureLevel : 0,
                     CathedralDiceCount = cathedralDiceCount,
                     CultureIcons = input.CultureIcons,
-                    WalledAreaSize = input.WalledAreaSize,
+                    WalledAreaSize = input.WallCompleted == false ? 0 : input.WalledAreaSize,
                     DisasterPoints = input.DisasterPoints,
                     IntermediateTotal = intermediateTotal
                 });
@@ -194,7 +201,8 @@ namespace MedievalEra.Server.Controllers
                     game.GameType,
                     Players = game.Players.OrderBy(player => player.PlayerNumber).Select(player => new
                     {
-                        player.PlayerName,
+                        PlayerName = player.PlayerEntity.Name,
+                        player.PlayerEntityId,
                         player.Title,
                         player.FinalTotal,
                         player.HasTitle,
@@ -203,7 +211,63 @@ namespace MedievalEra.Server.Controllers
                 })
                 .ToListAsync();
 
-            return Ok(scores);
+            var playerEntityIds = scores.SelectMany(game => game.Players)
+                .Select(player => player.PlayerEntityId)
+                .Distinct()
+                .ToArray();
+            var playerHistory = await _dbContext.PlayerScores
+                .AsNoTracking()
+                .Where(result => playerEntityIds.Contains(result.PlayerEntityId))
+                .Select(result => new
+                {
+                    result.PlayerEntityId,
+                    result.GameScoreId,
+                    result.Title,
+                    result.HasTitle
+                })
+                .ToListAsync();
+            var playerStatistics = playerHistory
+                .GroupBy(result => result.PlayerEntityId)
+                .ToDictionary(group => group.Key, group =>
+                {
+                    var titles = group
+                        .GroupBy(result => result.Title)
+                        .Select(titleGroup => new
+                        {
+                            Title = titleGroup.Key,
+                            Count = titleGroup.Select(result => result.GameScoreId).Distinct().Count()
+                        })
+                        .OrderByDescending(title => title.Count)
+                        .ThenBy(title => title.Title)
+                        .ToList();
+
+                    return new
+                    {
+                        GamesPlayed = group.Select(result => result.GameScoreId).Distinct().Count(),
+                        Wins = group.Where(result => result.HasTitle)
+                            .Select(result => result.GameScoreId)
+                            .Distinct()
+                            .Count(),
+                        MostCommonTitle = titles.FirstOrDefault()?.Title,
+                        Titles = titles
+                    };
+                });
+
+            return Ok(scores.Select(game => new
+            {
+                game.Id,
+                game.CreatedAt,
+                game.GameType,
+                Players = game.Players.Select(player => new
+                {
+                    player.PlayerName,
+                    player.Title,
+                    player.FinalTotal,
+                    player.HasTitle,
+                    player.ResultAccepted,
+                    Statistics = playerStatistics[player.PlayerEntityId]
+                })
+            }));
         }
 
         [HttpGet("{id:int}")]
@@ -237,6 +301,7 @@ namespace MedievalEra.Server.Controllers
         public int CultureIcons { get; set; }
         public int WalledAreaSize { get; set; }
         public int DisasterPoints { get; set; }
+        public bool? WallCompleted { get; set; }
     }
 
     public class BuildingScoreRequest

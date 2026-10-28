@@ -11,7 +11,7 @@
             <div class="pair-info">
               <span class="pair-label">Кубик Духовенства</span>
               <button @click="$emit('perform-extra-roll', pair.clergyId)"
-                      class="btn-extra"
+                      class="btn-extra era-button"
                       :title="'Сделать дополнительный бросок'">
                 🎲 Бросить еще раз
               </button>
@@ -28,7 +28,7 @@
       <button v-if="!isRollingComplete"
               @click="$emit('roll-dice')"
               :disabled="!canReroll"
-              class="btn-roll"
+              class="btn-roll era-button"
               :class="{ 'btn-roll-warning': rerollCount === maxRerolls - 1 }">
         <span class="btn-icon">🎲</span>
         {{ rollButtonText }}
@@ -36,13 +36,13 @@
 
       <button v-if="!isRollingComplete && !canReroll && rerollCount >= maxRerolls"
               @click="$emit('complete-turn')"
-              class="btn-complete">
+              class="btn-complete era-button">
         <span class="btn-icon">⏹️</span>
         Завершить ход
       </button>
 
       <button @click="$emit('add-dice')"
-              class="btn-add"
+              class="btn-add era-button"
               v-if="isRollingComplete">
         <span class="btn-icon">➕</span>
         Получить кубик

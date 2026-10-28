@@ -46,7 +46,7 @@
 
     <!-- Кнопка завершения хода -->
     <div class="turn-actions" v-if="!isTurnCompleted">
-      <button class="btn-complete-turn"
+      <button class="btn-complete-turn era-button"
               :class="{ 'btn-pulse': canCompleteTurn }"
               :disabled="!canCompleteTurn"
               @click="completeTurn">

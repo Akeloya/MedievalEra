@@ -10,10 +10,10 @@
                type="text"
                placeholder="Ваше имя"
                required
-               class="name-input" />
+               class="name-input era-input" />
 
         <div class="modal-actions">
-          <button type="submit" class="btn-start">
+          <button type="submit" class="btn-start era-button">
             Начать игру
           </button>
         </div>
