@@ -3,8 +3,10 @@ using MedievalEra.Server.Core.Game.Interfaces;
 
 namespace MedievalEra.Server.Core.Game
 {
-    public sealed record Building(Buildings Type, string Name, int? Score, int Quantity) : IBuilding
+    public sealed record Building(Buildings Type, string Name, int? Score, int Quantity, DiceType DiceType) : IBuilding
     {
+        public DiceType DiceType { get; } = DiceType;
+
         public void ResourceCounsumption(IPlayerDeck deck)
         {
             ArgumentNullException.ThrowIfNull(deck);

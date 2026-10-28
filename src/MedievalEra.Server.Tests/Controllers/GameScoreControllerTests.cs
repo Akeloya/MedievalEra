@@ -138,6 +138,7 @@ namespace MedievalEra.Server.Tests.Controllers
                 Assert.That(points.ValueKind == JsonValueKind.Null ? (int?)null : points.GetInt32(), Is.EqualTo(building.Score));
                 Assert.That(item.GetProperty("quantity").GetInt32(), Is.EqualTo(building.Quantity));
                 Assert.That(item.GetProperty("key").GetString(), Is.EqualTo(type.ToString()));
+                Assert.That(item.GetProperty("diceType").GetInt32(), Is.EqualTo((int)building.DiceType));
             }
             Assert.That(factory.CanBuild(Buildings.Empty), Is.False);
             Assert.Throws<ArgumentOutOfRangeException>(() => factory.Get(Buildings.Empty));

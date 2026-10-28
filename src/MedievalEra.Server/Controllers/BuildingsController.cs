@@ -14,7 +14,8 @@ namespace MedievalEra.Server.Controllers
             Key = building.Type.ToString(),
             Label = building.Name,
             Points = building.Score,
-            building.Quantity
+            building.Quantity,
+            DiceType = (int)building.DiceType
         }));
     }
 }

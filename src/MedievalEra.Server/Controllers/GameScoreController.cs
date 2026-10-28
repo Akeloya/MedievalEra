@@ -73,6 +73,9 @@ namespace MedievalEra.Server.Controllers
                         building.InsideWallCount > building.Count) ||
                     input.Buildings.Select(building => building.Building).Distinct().Count() != input.Buildings.Count ||
                     input.MarketBonus < 0 ||
+                    input.MarketBonus > input.Buildings
+                        .Where(building => building.Building == Buildings.Market)
+                        .Sum(building => building.Count) * 8 ||
                     input.GuildResources < 0 ||
                     input.UniversityCultureLevel < 0 ||
                     input.CathedralDiceCount < 0 ||
@@ -92,12 +95,26 @@ namespace MedievalEra.Server.Controllers
                              (building.Count + building.InsideWallCount)
                 }).ToList();
 
+                int BuiltCount(Buildings type) => input.Buildings
+                    .Where(building => building.Building == type)
+                    .Sum(building => building.Count);
+
+                var hasMarket = BuiltCount(Buildings.Market) > 0;
+                var hasGuild = BuiltCount(Buildings.Guild) > 0;
+                var hasUniversity = BuiltCount(Buildings.University) > 0;
+                var hasCathedral = BuiltCount(Buildings.Cathedral) > 0;
+                var cathedralDiceCount = hasCathedral
+                    ? input.Buildings
+                        .Where(building => factory.Get(building.Building).DiceType != DiceType.None)
+                        .Sum(building => building.Count)
+                    : 0;
+
                 var buildingTotal = buildings.Sum(building => building.Points);
                 var intermediateTotal = buildingTotal +
-                                        input.MarketBonus +
-                                        input.GuildResources +
-                                        input.UniversityCultureLevel +
-                                        input.CathedralDiceCount +
+                                        (hasMarket ? input.MarketBonus : 0) +
+                                        (hasGuild ? input.GuildResources : 0) +
+                                        (hasUniversity ? input.UniversityCultureLevel : 0) +
+                                        cathedralDiceCount +
                                         input.CultureIcons;
 
                 var playerName = input.PlayerName.Trim();
@@ -122,10 +139,10 @@ namespace MedievalEra.Server.Controllers
                     PlayerEntity = profile,
                     ResultAccepted = profile.PasswordHash is null,
                     Buildings = buildings,
-                    MarketBonus = input.MarketBonus,
-                    GuildResources = input.GuildResources,
-                    UniversityCultureLevel = input.UniversityCultureLevel,
-                    CathedralDiceCount = input.CathedralDiceCount,
+                    MarketBonus = hasMarket ? input.MarketBonus : 0,
+                    GuildResources = hasGuild ? input.GuildResources : 0,
+                    UniversityCultureLevel = hasUniversity ? input.UniversityCultureLevel : 0,
+                    CathedralDiceCount = cathedralDiceCount,
                     CultureIcons = input.CultureIcons,
                     WalledAreaSize = input.WalledAreaSize,
                     DisasterPoints = input.DisasterPoints,

@@ -46,12 +46,13 @@
           <td>{{ bonus.label }}</td>
           <td>1 за единицу</td>
           <td v-for="player in players" :key="player.playerNumber">
-            <label>
+            <label v-if="bonus.key !== 'cathedralDiceCount' && bonusAvailable(player, bonus.key)">
               {{ bonus.inputLabel }}
               <input v-model.number="player[bonus.key]"
-                     type="number" min="0" step="1" required>
+                     type="number" min="0" step="1"
+                     :max="bonus.key === 'marketBonus' ? builtCount(player, 'Market') * 8 : undefined" required>
             </label>
-            <strong>{{ player[bonus.key] || 0 }}</strong>
+            <strong>{{ bonusValue(player, bonus.key) }}</strong>
           </td>
         </tr>
 
@@ -124,7 +125,7 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { onMounted, reactive, ref, watch } from 'vue'
 
 const buildings = ref([])
 const buildingsLoaded = ref(false)
@@ -142,6 +143,7 @@ onMounted(async () => {
     }
     buildings.value = gameSet
     buildingsLoaded.value = true
+    refreshAutomaticBonuses()
   } catch {
     buildingsError.value = 'Не удалось загрузить игровой набор. Обновите страницу, чтобы повторить попытку.'
   }
@@ -154,6 +156,12 @@ const quantityBonuses = [
   { key: 'cathedralDiceCount', label: 'Собор: количество кубиков', inputLabel: 'Кубики' },
   { key: 'cultureIcons', label: 'Культура: количество иконок', inputLabel: 'Иконки' }
 ]
+
+const buildingForBonus = {
+  marketBonus: 'Market',
+  guildResources: 'Guild',
+  universityCultureLevel: 'University'
+}
 
 const players = reactive(Array.from({ length: 4 }, (_, index) => ({
   playerNumber: index + 1,
@@ -189,6 +197,45 @@ function buildingTotal(player, building) {
   return (building.points ?? 0) * (Number(score.count || 0) + Number(score.insideWallCount || 0))
 }
 
+function builtCount(player, key) {
+  return Number(player.buildings[key]?.count || 0)
+}
+
+function bonusAvailable(player, key) {
+  if (key === 'cathedralDiceCount') return builtCount(player, 'Cathedral') > 0
+  const buildingKey = buildingForBonus[key]
+  return !buildingKey || builtCount(player, buildingKey) > 0
+}
+
+function cathedralDiceCount(player) {
+  if (!bonusAvailable(player, 'cathedralDiceCount')) return 0
+  return buildings.value.reduce((total, building) =>
+    total + (Number(building.diceType) !== 0 ? builtCount(player, building.key) : 0), 0)
+}
+
+function bonusValue(player, key) {
+  if (key === 'cathedralDiceCount') return cathedralDiceCount(player)
+  if (!bonusAvailable(player, key)) return 0
+  if (key === 'marketBonus') return Math.min(Number(player.marketBonus || 0), builtCount(player, 'Market') * 8)
+  return Number(player[key] || 0)
+}
+
+function refreshAutomaticBonuses() {
+  for (const player of players) {
+    for (const [bonusKey, buildingKey] of Object.entries(buildingForBonus)) {
+      if (builtCount(player, buildingKey) === 0) player[bonusKey] = 0
+    }
+    player.marketBonus = Math.min(Number(player.marketBonus || 0), builtCount(player, 'Market') * 8)
+  }
+}
+
+watch(() => players.map(player => [
+  player.buildings.Market?.count,
+  player.buildings.Guild?.count,
+  player.buildings.University?.count,
+  player.buildings.Cathedral?.count
+]), refreshAutomaticBonuses, { deep: true })
+
 function availableFor(player, building) {
   const usedByOthers = players.filter(candidate => candidate !== player)
     .reduce((total, candidate) => total + Number(candidate.buildings[building.key].count || 0), 0)
@@ -201,10 +248,10 @@ function intermediateTotal(player) {
     0
   )
   return buildingsTotal +
-    Number(player.marketBonus || 0) +
-    Number(player.guildResources || 0) +
-    Number(player.universityCultureLevel || 0) +
-    Number(player.cathedralDiceCount || 0) +
+    bonusValue(player, 'marketBonus') +
+    bonusValue(player, 'guildResources') +
+    bonusValue(player, 'universityCultureLevel') +
+    cathedralDiceCount(player) +
     Number(player.cultureIcons || 0) +
     cultureBonus(player) +
     walledAreaBonus(player)
@@ -270,10 +317,10 @@ async function saveScore() {
         count: Number(player.buildings[building.key].count || 0),
         insideWallCount: Number(player.buildings[building.key].insideWallCount || 0)
       })),
-      marketBonus: Number(player.marketBonus || 0),
+      marketBonus: bonusValue(player, 'marketBonus'),
       guildResources: Number(player.guildResources || 0),
       universityCultureLevel: Number(player.universityCultureLevel || 0),
-      cathedralDiceCount: Number(player.cathedralDiceCount || 0),
+      cathedralDiceCount: cathedralDiceCount(player),
       cultureIcons: Number(player.cultureIcons || 0),
       walledAreaSize: Number(player.walledAreaSize || 0),
       disasterPoints: Number(player.disasterPoints || 0)

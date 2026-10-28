@@ -21,6 +21,8 @@ namespace MedievalEra.Server.Core.Game.Interfaces
         /// <summary>Количество зданий этого типа в общем игровом наборе.</summary>
         public int Quantity { get; }
 
+        public DiceType DiceType { get; }
+
         /// <summary>
         /// Потребление ресурсов
         /// </summary>
