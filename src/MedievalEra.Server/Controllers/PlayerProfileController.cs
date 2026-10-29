@@ -205,6 +205,7 @@ namespace MedievalEra.Server.Controllers
 
             return Ok(new
             {
+                profile.Id,
                 profile.Name,
                 PendingResults = pendingResults,
                 RecentResults = recentResultsWithBuildingNames,

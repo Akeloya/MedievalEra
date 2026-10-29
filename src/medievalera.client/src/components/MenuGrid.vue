@@ -30,7 +30,7 @@ const menuItems = computed(() => {
 
   // 2. Формируем пункты меню из детей текущего маршрута
   return currentRecord.children
-    .filter(child => child.meta && child.name) // Берем только именованные роуты с метой
+    .filter(child => child.meta && child.name && !child.meta.hideFromMenu) // Берем только видимые пункты меню
     .map(child => ({
       id: child.name,
       title: child.meta.title || child.name,

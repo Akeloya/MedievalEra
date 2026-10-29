@@ -30,37 +30,25 @@ const routes = [
               {
                 path: "online",
                 name: "online",
-                component: () => import("@/components/Views/HomeView.vue"),
+                component: () => import("@/components/Views/LobbyView.vue"),
                 meta: {
                   title: "Играть онлайн",
                   breadcrumb: "Онлайн",
                   icon: "⚔️",
                   description: "Старт новой игры"
                 },
-                children: [
-                  {
-                    path: "lobby",
-                    name: "lobby",
-                    component: () => import("@/components/Views/LobbyView.vue"),
-                    meta: {
-                      title: "Лобби",
-                      breadcrumb: "Онлайн игра",
-                      icon: "👥",
-                      description: "Онлайн игра"
-                    }
-                  },
-                  {
-                    path: "settings",
-                    name: "settings",
-                    component: () => import("@/components/Views/SettingsView.vue"),
-                    meta: {
-                      title: "Настройки",
-                      breadcrumb: "Настройки",
-                      icon: "⚙️",
-                      description: "Настройки игры"
-                    }
-                  }
-                ]
+              },
+              {
+                path: "online/era",
+                name: "online-era",
+                component: () => import("@/components/Views/OnlineEraView.vue"),
+                meta: {
+                  title: "Онлайн игра",
+                  breadcrumb: "Игра",
+                  icon: "⚔️",
+                  description: "Партия началась",
+                  hideFromMenu: true
+                }
               },
               {
                 path: "tableGame",
