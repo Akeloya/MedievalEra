@@ -6,5 +6,8 @@ namespace MedievalEra.Server.Core.Game.Interfaces
     {
         GamingSource Resource { get; }
         int Count { get; }
+        int MaxValue { get; }
+        bool TryAdd(int count);        
+        bool TryDecrase(int count);
     }
 }

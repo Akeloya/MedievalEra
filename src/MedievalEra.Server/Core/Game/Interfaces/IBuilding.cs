@@ -7,6 +7,11 @@ namespace MedievalEra.Server.Core.Game.Interfaces
     /// </summary>
     public interface IBuilding
     {
+        IReadOnlyList<BuildingMask> Masks { get; }
+        BuildingMask Mask { get; }
+        int Rotation { get; }
+        bool IsInsideWall { get; set; }
+        void Rotate();
         /// <summary>
         /// Сколько очков даёт
         /// </summary>
