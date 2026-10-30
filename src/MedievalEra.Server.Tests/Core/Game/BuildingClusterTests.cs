@@ -68,7 +68,7 @@ public class BuildingClusterTests
         Place(deck, 1, 0, separator);
         Place(deck, 2, 0);
         // По обе стороны стартовой башни также нет кластера.
-        Place(deck, 6, 7);
+        Place(deck, 5, 7);
         Place(deck, 8, 7);
         Assert.That(deck.CalculateBuildingClaster(), Is.Zero);
     }

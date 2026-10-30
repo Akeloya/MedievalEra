@@ -20,11 +20,10 @@ namespace MedievalEra.Server.Core.Game
                 xx
                 xx
                 """),
-            new Building(Buildings.House, "Дом", 1, 10, DiceType.Peasant, """xx"""),
+            new Building(Buildings.House, "Дом", 1, 18, DiceType.Peasant, """xx"""),
             new Building(Buildings.Farm, "Ферма", 1, 16, DiceType.None,"""
-                xx
-                xx
-                xx
+                xxx
+                xxx
                 """),
             new Building(Buildings.Church, "Церковь", 1, 5, DiceType.Clergy,"""xxx"""),
             new Building(Buildings.Monastery, "Монастырь", 4, 3, DiceType.None,"""

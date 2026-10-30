@@ -28,10 +28,11 @@ namespace MedievalEra.Server.Core.Game
         public int Rotation { get; private set; }
         public BuildingMask Mask => Masks[Rotation / 90];
         public bool IsInsideWall { get; set; }
+        public bool Locked { get; set; } = false;
         internal bool IsPlaced { get; set; }
         public void Rotate()
         {
-            if (IsPlaced)
+            if (IsPlaced || Locked)
                 throw new InvalidOperationException("Перед поворотом снимите здание с доски.");
             Rotation = (Rotation + 90) % 360;
         }

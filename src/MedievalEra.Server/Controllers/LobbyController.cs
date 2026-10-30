@@ -93,10 +93,11 @@ public sealed class LobbyController(DiceFactory diceFactory, AppDbContext dbCont
                 return Conflict(new { message = "Вы уже зарегистрированы в другой игре." });
             var openSeat = game.Players.FirstOrDefault(member => member.WaitingForPlayer);
             if (openSeat is null) return Conflict(new { message = "В этой игре нет свободного места для игрока." });
+            try { game.Session.AddPlayer(new Player(player.Id, player.Name)); }
+            catch (InvalidOperationException exception) { return Conflict(new { message = exception.Message }); }
             openSeat.Id = player.Id;
             openSeat.Name = player.Name;
             openSeat.WaitingForPlayer = false;
-            game.Session.AddPlayer(new Player(player.Id, player.Name));
             return Ok(ToResponse(game));
         }
     }
@@ -113,6 +114,21 @@ public sealed class LobbyController(DiceFactory diceFactory, AppDbContext dbCont
             var emptySeats = game.Players.Where(member => member.WaitingForPlayer).ToList();
             if (emptySeats.Count > 0 && (!fillWithBots || !game.AllowBots))
                 return Conflict(new { message = "Не все места заняты игроками." });
+            var addedBots = new List<int>();
+            try
+            {
+                foreach (var bot in emptySeats)
+                {
+                    var botId = -1 - game.Players.IndexOf(bot);
+                    game.Session.AddPlayer(new Player(botId, $"Игрок компьютер {addedBots.Count + 1}"));
+                    addedBots.Add(botId);
+                }
+            }
+            catch (InvalidOperationException exception)
+            {
+                foreach (var botId in addedBots) game.Session.RemovePlayer(botId);
+                return Conflict(new { message = exception.Message });
+            }
             if (emptySeats.Count > 0)
             {
                 for (var index = 0; index < emptySeats.Count; index++)
@@ -122,8 +138,6 @@ public sealed class LobbyController(DiceFactory diceFactory, AppDbContext dbCont
                     emptySeats[index].IsComputer = true;
                 }
             }
-            foreach (var bot in game.Players.Where(member => member.IsComputer))
-                game.Session.AddPlayer(new Player(-1 - game.Players.IndexOf(bot), bot.Name));
             game.Session.Start();
             game.Status = "playing";
             game.StartedAt = DateTimeOffset.UtcNow;
@@ -262,12 +276,15 @@ public sealed class LobbyController(DiceFactory diceFactory, AppDbContext dbCont
                 (request.DiceIndex < 0 || request.DiceIndex >= dice.Length ||
                  (request.Action == "extra-roll" && (request.TargetIndex < 0 || request.TargetIndex >= dice.Length))))
                 return BadRequest("Неверный номер кубика.");
+            var rolledDice = request.Action == "roll" ? deck.RollingDices.ToArray()
+                : request.Action == "extra-roll" ? new[] { dice[request.DiceIndex], dice[request.TargetIndex] } : [];
             try
             {
                 switch (request.Action)
                 {
                     case "roll": game.Session.Roll(player.Id); break;
                     case "finish": game.Session.FinishTurn(player.Id); break;
+                    case "finish-construction": game.Session.CompleteConstruction(player.Id); break;
                     case "freeze": deck.Freeze(dice[request.DiceIndex]); break;
                     case "unfreeze": deck.Unfreeze(dice[request.DiceIndex]); break;
                     case "extra-roll": deck.ExtraRoll(dice[request.DiceIndex], dice[request.TargetIndex]); break;
@@ -280,8 +297,101 @@ public sealed class LobbyController(DiceFactory diceFactory, AppDbContext dbCont
             {
                 return Conflict(new { message = exception.Message });
             }
+            var descriptions = new Dictionary<string, string>
+            {
+                ["roll"] = "Бросок кубиков", ["finish"] = "Завершение хода",
+                ["finish-construction"] = "Завершение строительства",
+                ["freeze"] = "Кубик зафиксирован", ["unfreeze"] = "Кубик освобождён",
+                ["extra-roll"] = "Дополнительный бросок", ["next-round"] = "Начат следующий раунд",
+                ["scoring"] = "Начат подсчёт очков"
+            };
+            game.History.Add(new HistoryEntry(game.History.Count + 1, player.Id, player.Name,
+                request.Action, descriptions[request.Action], game.Session.RoundNumber, DateTimeOffset.UtcNow,
+                request.Action is "roll" or "extra-roll"
+                    ? deck.CurrentFaces.Where(entry => rolledDice.Contains(entry.Key)).Select(entry => new HistoryDie(entry.Key.Name,
+                        entry.Value.Values.Where(value => value.Value > 0).ToDictionary(value => value.Key.ToString(), value => value.Value),
+                        entry.Value.Choose)).ToArray() : []));
             return Ok(BoardResponse(game));
         }
+    }
+
+    [HttpPost("games/{gameId:int}/buildings")]
+    public IActionResult PlaceBuilding(int gameId, [FromBody] PlaceBuildingRequest request)
+    {
+        if (!TryGetPlayer(out var player)) return Unauthorized();
+        if (!Games.TryGetValue(gameId, out var game)) return NotFound();
+        lock (game)
+        {
+            if (!game.Session.PlayerDecks.TryGetValue(player.Id, out var deck) || game.Session.HasLeft(player.Id)) return Forbid();
+            if (game.IsCompleting || game.Session.State != GameState.Playing)
+                return Conflict(new { message = "Сейчас нельзя размещать здания." });
+            if (request.Rotation is not (0 or 90 or 180 or 270)) return BadRequest("Недопустимый поворот.");
+            var building = game.Session.BuildingSupply.Available.FirstOrDefault(item =>
+                item.Type == request.Type && item.Masks[0].ToString() == request.Mask);
+            if (building is null) return Conflict(new { message = "Эта форма здания закончилась в запасе." });
+            if (!deck.BuildFromSupply(game.Session.BuildingSupply, building, request.X, request.Y, request.Rotation))
+                return Conflict(new { message = "Здание пересекается с другим зданием или выходит за поле." });
+            game.History.Add(new HistoryEntry(game.History.Count + 1, player.Id, player.Name, "build",
+                $"Построено: {building.Name} ({request.X + 1}, {request.Y + 1})",
+                game.Session.RoundNumber, DateTimeOffset.UtcNow, []));
+            return Ok(BoardResponse(game));
+        }
+    }
+
+    [HttpPut("games/{gameId:int}/buildings/{buildingId:int}")]
+    public IActionResult MoveBuilding(int gameId, int buildingId, [FromBody] MoveBuildingRequest request)
+    {
+        if (!TryGetPlayer(out var player)) return Unauthorized();
+        if (!Games.TryGetValue(gameId, out var game)) return NotFound();
+        lock (game)
+        {
+            if (!game.Session.PlayerDecks.TryGetValue(player.Id, out var deck) || game.Session.HasLeft(player.Id)) return Forbid();
+            if (game.IsCompleting || game.Session.State != GameState.Playing)
+                return Conflict(new { message = "Сейчас нельзя перемещать здания." });
+            if (!deck.Buildings.TryGetValue(buildingId, out var building)) return NotFound();
+            if (!deck.MoveBuilding(buildingId, request.X, request.Y, request.Rotation))
+                return Conflict(new { message = "Здание заблокировано, пересекает другое здание или выходит за поле." });
+            game.History.Add(new HistoryEntry(game.History.Count + 1, player.Id, player.Name, "move-building",
+                $"Перемещено: {building.Name} ({request.X + 1}, {request.Y + 1})",
+                game.Session.RoundNumber, DateTimeOffset.UtcNow, []));
+            return Ok(BoardResponse(game));
+        }
+    }
+
+    public sealed class MoveBuildingRequest
+    {
+        public int X { get; set; }
+        public int Y { get; set; }
+        public int Rotation { get; set; }
+    }
+
+    [HttpDelete("games/{gameId:int}/buildings/{buildingId:int}")]
+    public IActionResult RemoveBuilding(int gameId, int buildingId)
+    {
+        if (!TryGetPlayer(out var player)) return Unauthorized();
+        if (!Games.TryGetValue(gameId, out var game)) return NotFound();
+        lock (game)
+        {
+            if (!game.Session.PlayerDecks.TryGetValue(player.Id, out var deck) || game.Session.HasLeft(player.Id)) return Forbid();
+            if (game.IsCompleting || game.Session.State != GameState.Playing)
+                return Conflict(new { message = "Сейчас нельзя удалять здания." });
+            if (!deck.Buildings.TryGetValue(buildingId, out var building)) return NotFound();
+            if (!deck.RemoveBuilding(buildingId))
+                return Conflict(new { message = "Удаление этого здания запрещено." });
+            deck.ReturnBuilding(game.Session.BuildingSupply, building);
+            game.History.Add(new HistoryEntry(game.History.Count + 1, player.Id, player.Name, "remove-building",
+                $"Удалено: {building.Name}", game.Session.RoundNumber, DateTimeOffset.UtcNow, []));
+            return Ok(BoardResponse(game));
+        }
+    }
+
+    public sealed class PlaceBuildingRequest
+    {
+        public Buildings Type { get; set; }
+        public string Mask { get; set; } = "";
+        public int X { get; set; }
+        public int Y { get; set; }
+        public int Rotation { get; set; }
     }
 
     private static object BoardResponse(LobbyGame game) => new
@@ -289,6 +399,13 @@ public sealed class LobbyController(DiceFactory diceFactory, AppDbContext dbCont
         game.Id,
         game.Session.State,
         game.Session.RoundNumber,
+        history = game.History.ToArray(),
+        buildingCatalog = BuildingsFactory.GameSet.Select(building => new
+        {
+            building.Type, building.Name, mask = building.Masks[0].ToString(),
+            remaining = game.Session.BuildingSupply.Available.Count(item =>
+                item.Type == building.Type && item.Masks[0].ToString() == building.Masks[0].ToString())
+        }).ToArray(),
         buildingSupply = game.Session.BuildingSupply.Available.Select(building => new
         {
             building.Type, building.Name, building.Score, building.DiceType,
@@ -300,6 +417,7 @@ public sealed class LobbyController(DiceFactory diceFactory, AppDbContext dbCont
             hasLeft = game.Session.HasLeft(deck.Player.Id),
             deck.RestRolls,
             deck.IsTurnCompleted,
+            deck.AllowToRemoveBuilding,
             resources = deck.GameResources.Concat([deck.Skull, deck.Culture])
                 .Select(resource => new { resource.Resource, resource.Count, resource.MaxValue }).ToArray(),
             field = Enumerable.Range(0, MedievalEra.Server.Core.Game.Deck.PlayerDeck.BoardSize)
@@ -308,7 +426,7 @@ public sealed class LobbyController(DiceFactory diceFactory, AppDbContext dbCont
             buildings = deck.Buildings.Select(entry => new
             {
                 id = entry.Key, entry.Value.Type, entry.Value.Name,
-                mask = entry.Value.Mask.ToString(), entry.Value.Rotation, entry.Value.IsInsideWall
+                mask = entry.Value.Mask.ToString(), entry.Value.Rotation, entry.Value.IsInsideWall, entry.Value.Locked
             }).ToArray(),
             dice = deck.Dices.Select((dice, index) => new
             {
@@ -388,6 +506,10 @@ public sealed class LobbyController(DiceFactory diceFactory, AppDbContext dbCont
         public bool IsComputer { get; set; } = isComputer;
         public bool HasLeft { get; set; }
     }
+    private sealed record HistoryDie(string Name, Dictionary<string, int> Values, bool Choose);
+    private sealed record HistoryEntry(int Id, int PlayerId, string PlayerName, string Action,
+        string Description, int Round, DateTimeOffset CreatedAt, HistoryDie[] Dice);
+
     private sealed class LobbyGame(int id, string version, string mode, bool allowBots, DiceFactory diceFactory)
     {
         public Game Session { get; } = new(id, diceFactory);
@@ -401,5 +523,6 @@ public sealed class LobbyController(DiceFactory diceFactory, AppDbContext dbCont
         public int OwnerId { get; set; }
         public string Status { get; set; } = "waiting";
         public List<LobbyMember> Players { get; } = [];
+        public List<HistoryEntry> History { get; } = [];
     }
 }

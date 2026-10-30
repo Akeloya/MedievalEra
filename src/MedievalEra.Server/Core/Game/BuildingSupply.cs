@@ -24,6 +24,23 @@ public sealed class BuildingSupply
 
     public bool CanTake(Buildings type) => available.Any(b => b.Type == type);
 
+    internal IReadOnlyList<IBuilding> IssueStartingBuildings(IEnumerable<(Buildings Type, string? Mask)> requests)
+    {
+        var candidates = available.ToList();
+        var selected = new List<IBuilding>();
+        foreach (var request in requests)
+        {
+            var building = candidates.FirstOrDefault(item => item.Type == request.Type &&
+                (request.Mask is null || item.Masks[0].ToString() == request.Mask));
+            if (building is null)
+                throw new InvalidOperationException("В общем запасе недостаточно зданий для стартового набора.");
+            candidates.Remove(building);
+            selected.Add(building);
+        }
+        foreach (var building in selected) Take(building);
+        return selected;
+    }
+
     public IBuilding? Take(Buildings type)
     {
         var building = available.FirstOrDefault(b => b.Type == type);

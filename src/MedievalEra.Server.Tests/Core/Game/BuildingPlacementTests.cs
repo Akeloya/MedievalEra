@@ -19,9 +19,18 @@ public class BuildingPlacementTests
     [TestCase("xx\nx")]
     [TestCase("x ")]
     [TestCase("X")]
+    [TestCase("xxх")]
     [TestCase("x\n")]
     public void InvalidMasksAreRejected(string mask) =>
         Assert.Throws<ArgumentException>(() => new BuildingMask(mask));
+
+    [Test]
+    public void FactoryCreatesFarmWithThreeColumnsAndTwoRows()
+    {
+        var farm = new BuildingsFactory().Get(Buildings.Farm);
+        Assert.That(farm.Mask.ToString(), Is.EqualTo("xxx\nxxx"));
+        Assert.That(farm.Masks.Count, Is.EqualTo(4));
+    }
 
     [Test]
     public void RectangularMaskHasFourClockwiseRotations()
@@ -67,8 +76,8 @@ public class BuildingPlacementTests
         Assert.That(deck.CanBuild(-1, 0, wall), Is.False);
         Assert.That(deck.CanBuild(int.MaxValue, 0, wall), Is.False);
         Assert.That(deck.CanBuild(13, 0, wall), Is.False);
-        Assert.That(deck.Build(6, 7, wall), Is.False);
-        Assert.That(deck.Field[6, 7], Is.Null);
+        Assert.That(deck.Build(5, 7, wall), Is.False);
+        Assert.That(deck.Field[5, 7], Is.Null);
         wall.Rotate();
         Assert.That(deck.Build(13, 0, wall), Is.True);
         Assert.That(deck.Field[13, 1], Is.EqualTo(1));
@@ -85,6 +94,12 @@ public class BuildingPlacementTests
         var deck = Deck();
         Assert.That(deck.Field[7, 7], Is.EqualTo(0));
         Assert.That(deck.Buildings[0].Type, Is.EqualTo(Buildings.Tower));
+        Assert.That(deck.Buildings[0].Mask.ToString(), Is.EqualTo("xx\nxx"));
+        Assert.That(deck.Field[6, 7], Is.EqualTo(0));
+        Assert.That(deck.Field[7, 6], Is.EqualTo(0));
+        Assert.That(deck.Field[6, 6], Is.EqualTo(0));
+        var occupiedCells = deck.Field.Cast<int?>().Count(id => id == 0);
+        Assert.That(occupiedCells, Is.EqualTo(4));
         Assert.That(deck.RemoveBuilding(0), Is.False);
         var wall = Create();
         var supply = new BuildingSupply([wall]);
@@ -95,6 +110,91 @@ public class BuildingPlacementTests
         var field = deck.Field;
         field[0, 0] = null;
         Assert.That(deck.Field[0, 0], Is.EqualTo(1));
+    }
+
+    [Test]
+    public void MovingPreservesIdentityAndStockAndAllowsOverlapWithOwnCells()
+    {
+        var deck = Deck();
+        var building = Create("xxx");
+        var supply = new BuildingSupply([building]);
+        Assert.That(deck.BuildFromSupply(supply, building, 0, 0, 0), Is.True);
+        Assert.That(deck.MoveBuilding(1, 1, 0, 0), Is.True);
+        Assert.That(deck.Field[0, 0], Is.Null);
+        Assert.That(deck.Field[1, 0], Is.EqualTo(1));
+        Assert.That(deck.Field[3, 0], Is.EqualTo(1));
+        Assert.That(deck.MoveBuilding(1, 1, 0, 90), Is.True);
+        Assert.That(deck.Field[2, 0], Is.Null);
+        Assert.That(deck.Field[1, 2], Is.EqualTo(1));
+        Assert.That(deck.Buildings[1], Is.SameAs(building));
+        Assert.That(building.Rotation, Is.EqualTo(90));
+        Assert.That(supply.Available, Is.Empty);
+        Assert.That(deck.UnbuiltBuildings, Is.Empty);
+        Assert.That(deck.RemoveBuilding(1), Is.True);
+        Assert.That(deck.Field[1, 2], Is.Null);
+    }
+
+    [Test]
+    public void RejectedMovesPreserveOriginalCellsRotationAndInventory()
+    {
+        var deck = Deck();
+        var building = Create("xx");
+        var supply = new BuildingSupply([building]);
+        deck.BuildFromSupply(supply, building, 0, 0, 0);
+        Assert.That(deck.MoveBuilding(1, 6, 6, 90), Is.False);
+        Assert.That(deck.MoveBuilding(1, 13, 13, 90), Is.False);
+        Assert.That(deck.MoveBuilding(1, -1, 0, 0), Is.False);
+        Assert.That(deck.MoveBuilding(1, 0, 0, 45), Is.False);
+        Assert.That(deck.MoveBuilding(99, 0, 0, 0), Is.False);
+        building.Locked = true;
+        Assert.That(deck.MoveBuilding(1, 3, 0, 90), Is.False);
+        Assert.That(deck.MoveBuilding(0, 3, 0, 0), Is.False);
+        Assert.That(deck.Field[0, 0], Is.EqualTo(1));
+        Assert.That(deck.Field[1, 0], Is.EqualTo(1));
+        Assert.That(building.Rotation, Is.Zero);
+        Assert.That(deck.Buildings[1], Is.SameAs(building));
+        Assert.That(supply.Available, Is.Empty);
+    }
+
+    [Test]
+    public void RemovalPermissionDefaultsToTrueAndBlocksRemovalWithoutChangingBoard()
+    {
+        MedievalEra.Server.Core.Game.Interfaces.IPlayerDeck deck = Deck();
+        Assert.That(deck.AllowToRemoveBuilding, Is.True);
+        var building = Create("xx");
+        var supply = new BuildingSupply([building]);
+        Assert.That(deck.BuildFromSupply(supply, building, 0, 0, 0), Is.True);
+        deck.AllowToRemoveBuilding = false;
+        Assert.That(deck.RemoveBuilding(1), Is.False);
+        Assert.That(deck.Field[0, 0], Is.EqualTo(1));
+        Assert.That(deck.Field[1, 0], Is.EqualTo(1));
+        Assert.That(deck.Buildings[1], Is.SameAs(building));
+        Assert.That(deck.UnbuiltBuildings, Is.Empty);
+        deck.AllowToRemoveBuilding = true;
+        Assert.That(deck.RemoveBuilding(1), Is.True);
+        Assert.That(deck.ReturnBuilding(supply, building), Is.True);
+        Assert.That(deck.Field[0, 0], Is.Null);
+        Assert.That(deck.Field[1, 0], Is.Null);
+        Assert.That(supply.Available, Does.Contain(building));
+    }
+
+    [Test]
+    public void BuildFromSupplyRollsBackRejectedPlacementAndUsesSelectedRotation()
+    {
+        var deck = Deck();
+        var building = Create("xx");
+        var supply = new BuildingSupply([building]);
+        Assert.That(deck.BuildFromSupply(supply, building, 6, 6, 90), Is.False);
+        Assert.That(supply.Available, Does.Contain(building));
+        Assert.That(deck.UnbuiltBuildings, Is.Empty);
+        Assert.That(building.Rotation, Is.Zero);
+        Assert.That(deck.BuildFromSupply(supply, building, 13, 13, 90), Is.False);
+        Assert.That(deck.BuildFromSupply(supply, building, 0, 0, 45), Is.False);
+        Assert.That(deck.BuildFromSupply(supply, building, 13, 0, 90), Is.True);
+        Assert.That(deck.Field[13, 0], Is.EqualTo(1));
+        Assert.That(deck.Field[13, 1], Is.EqualTo(1));
+        Assert.That(supply.Available, Is.Empty);
+        Assert.That(deck.BuildFromSupply(supply, building, 0, 0, 0), Is.False);
     }
 
     [Test]

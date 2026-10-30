@@ -30,13 +30,15 @@ public sealed class Game(int id, DiceFactory diceFactory)
         RequireState(GameState.Preparation);
         if (decks.Count >= 4) throw new InvalidOperationException("Все места заняты.");
         if (decks.ContainsKey(player.Id)) throw new InvalidOperationException("Игрок уже участвует в партии.");
-        decks.Add(player.Id, new PlayerDeck(player, diceFactory));
+        var deck = new PlayerDeck(player, diceFactory);
+        deck.PlaceStartingBuildings(BuildingSupply);
+        decks.Add(player.Id, deck);
     }
 
     public void RemovePlayer(int playerId)
     {
         RequireState(GameState.Preparation);
-        decks.Remove(playerId);
+        if (decks.Remove(playerId, out var deck)) deck.ReturnBuildingsBeforeStart(BuildingSupply);
     }
 
     public void Start()
@@ -49,12 +51,14 @@ public sealed class Game(int id, DiceFactory diceFactory)
 
     public void Roll(int playerId) { RequireActivePlayer(playerId); decks[playerId].Roll(); }
     public void FinishTurn(int playerId) { RequireActivePlayer(playerId); decks[playerId].Finish(); }
+    public void CompleteConstruction(int playerId) { RequireActivePlayer(playerId); decks[playerId].CompleteConstruction(); }
 
     public void StartNextRound()
     {
         RequireState(GameState.Playing);
         if (decks.Any(entry => !HasLeft(entry.Key) && !entry.Value.IsTurnCompleted))
             throw new InvalidOperationException("Не все игроки завершили ход.");
+        foreach (var deck in decks.Values) deck.CompleteConstruction();
         BeginRound();
     }
 
@@ -64,6 +68,7 @@ public sealed class Game(int id, DiceFactory diceFactory)
         if (decks.Any(entry => !HasLeft(entry.Key) && !entry.Value.IsTurnCompleted))
             throw new InvalidOperationException("Сначала завершите текущий раунд.");
         State = GameState.Scoring;
+        foreach (var deck in decks.Values) deck.CompleteConstruction();
     }
 
     private void BeginRound()

@@ -17,6 +17,7 @@ namespace MedievalEra.Server.Core.Game.Deck
         public IReadOnlyDictionary<int, IBuilding> Buildings =>
             new System.Collections.ObjectModel.ReadOnlyDictionary<int, IBuilding>(_buildings);
         public IReadOnlyList<IBuilding> UnbuiltBuildings => _unbuiltBuildings.AsReadOnly();
+        public bool AllowToRemoveBuilding { get; set; } = true;
         public IPlayer Player { get; }
         public IResource Goods { get; private set; } = null!;
         public IResource Stone { get; private set; } = null!;
@@ -37,11 +38,71 @@ namespace MedievalEra.Server.Core.Game.Deck
             Meal = new GameResource(GamingSource.Meal, 3, 10);
             GameResources = Array.AsReadOnly<IResource>([Goods, Stone, Wood, Meal]);
 
-            var tower = new Building(Enums.Buildings.Tower, "Башня", 1, 1, DiceType.Nobility);
+            var tower = (Building)new BuildingsFactory().Get(Enums.Buildings.Tower);
             tower.IsPlaced = true;
+            tower.Locked = true;
             _buildings.Add(0, tower);
-            _occupiedCells.Add(0, [(BoardSize / 2, BoardSize / 2)]);
-            _field[BoardSize / 2, BoardSize / 2] = 0;
+            var startX = (BoardSize - tower.Mask.Width) / 2;
+            var startY = (BoardSize - tower.Mask.Height) / 2;
+            var cells = new List<(int X, int Y)>();
+            for (var dx = 0; dx < tower.Mask.Width; dx++)
+                for (var dy = 0; dy < tower.Mask.Height; dy++)
+                    if (tower.Mask[dx, dy])
+                    {
+                        var cell = (X: startX + dx, Y: startY + dy);
+                        cells.Add(cell);
+                        _field[cell.X, cell.Y] = 0;
+                    }
+            _occupiedCells.Add(0, cells.ToArray());
+        }
+
+        internal void PlaceStartingBuildings(BuildingSupply supply)
+        {
+            var layout = new (Buildings Type, string? Mask, int X, int Y, int Rotation)[]
+            {
+                (Enums.Buildings.Wall, "xxxx", 2, 6, 0),
+                (Enums.Buildings.Wall, "xxxx", 8, 6, 0),
+                (Enums.Buildings.Wall, "xxxx", 2, 7, 90),
+                (Enums.Buildings.House, null, 4, 7, 0),
+                (Enums.Buildings.House, null, 4, 9, 0),
+                (Enums.Buildings.House, null, 8, 8, 0),
+                (Enums.Buildings.Farm, null, 5, 11, 0),
+                (Enums.Buildings.ScorchedEarth, null, 11, 11, 0)
+            };
+            var pieces = supply.IssueStartingBuildings(new[] { (Enums.Buildings.Tower, (string?)null) }
+                .Concat(layout.Select(item => (item.Type, item.Mask))));
+            var tower = (Building)pieces[0];
+            tower.IsPlaced = true;
+            tower.Locked = true;
+            _buildings[0] = tower;
+            for (var index = 0; index < layout.Length; index++)
+            {
+                var item = layout[index];
+                var building = pieces[index + 1];
+                _unbuiltBuildings.Add(building);
+                while (building.Rotation != item.Rotation) building.Rotate();
+                if (!Build(item.X, item.Y, building))
+                    throw new InvalidOperationException("Стартовое здание не помещается на планшете.");
+            }
+        }
+
+        internal void ReturnBuildingsBeforeStart(BuildingSupply supply)
+        {
+            foreach (var building in _buildings.Values.Concat(_unbuiltBuildings))
+            {
+                if (building is Building instance) instance.IsPlaced = false;
+                building.Locked = false;
+                supply.Return(building);
+            }
+            _buildings.Clear();
+            _unbuiltBuildings.Clear();
+            _occupiedCells.Clear();
+            Array.Clear(_field);
+        }
+
+        public void CompleteConstruction()
+        {
+            foreach (var building in _buildings.Values) building.Locked = true;
         }
 
         public bool TakeBuilding(BuildingSupply supply, IBuilding building)
@@ -59,6 +120,17 @@ namespace MedievalEra.Server.Core.Game.Deck
             if (index < 0 || !supply.Return(building)) return false;
             _unbuiltBuildings.RemoveAt(index);
             return true;
+        }
+
+        public bool BuildFromSupply(BuildingSupply supply, IBuilding building, int x, int y, int rotation)
+        {
+            if (rotation is not (0 or 90 or 180 or 270) || !TakeBuilding(supply, building)) return false;
+            var originalRotation = building.Rotation;
+            while (building.Rotation != rotation) building.Rotate();
+            if (Build(x, y, building)) return true;
+            while (building.Rotation != originalRotation) building.Rotate();
+            ReturnBuilding(supply, building);
+            return false;
         }
 
         public bool CanBuild(int x, int y, IBuilding building)
@@ -90,9 +162,34 @@ namespace MedievalEra.Server.Core.Game.Deck
             return true;
         }
 
+        public bool MoveBuilding(int id, int x, int y, int rotation)
+        {
+            if (!_buildings.TryGetValue(id, out var building) || building.Locked || building.IsInsideWall ||
+                rotation is not (0 or 90 or 180 or 270)) return false;
+            var mask = building.Masks[rotation / 90];
+            if (x < 0 || y < 0 || x > BoardSize - mask.Width || y > BoardSize - mask.Height) return false;
+            var cells = new List<(int X, int Y)>();
+            for (var dx = 0; dx < mask.Width; dx++)
+                for (var dy = 0; dy < mask.Height; dy++)
+                    if (mask[dx, dy])
+                    {
+                        var occupant = _field[x + dx, y + dy];
+                        if (occupant.HasValue && occupant.Value != id) return false;
+                        cells.Add((x + dx, y + dy));
+                    }
+            // Validate before changing the board: rejected moves leave the original intact.
+            if (building is Building instance) instance.IsPlaced = false;
+            while (building.Rotation != rotation) building.Rotate();
+            if (building is Building placed) placed.IsPlaced = true;
+            foreach (var cell in _occupiedCells[id]) _field[cell.X, cell.Y] = null;
+            foreach (var cell in cells) _field[cell.X, cell.Y] = id;
+            _occupiedCells[id] = cells.ToArray();
+            return true;
+        }
+
         public bool RemoveBuilding(int id)
         {
-            if (id == 0 || !_buildings.TryGetValue(id, out var building) || building.IsInsideWall)
+            if (!AllowToRemoveBuilding || id == 0 || !_buildings.TryGetValue(id, out var building) || building.IsInsideWall || building.Locked)
                 return false;
             foreach (var cell in _occupiedCells[id]) _field[cell.X, cell.Y] = null;
             _occupiedCells.Remove(id);

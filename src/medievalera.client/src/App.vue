@@ -46,6 +46,11 @@
   }
 </script>
 <style>
+  .medieval-era-app, .medieval-era-app * {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
   html, body {
     margin: 0;
     padding: 0;

@@ -11,6 +11,7 @@ namespace MedievalEra.Server.Core.Game.Interfaces
         BuildingMask Mask { get; }
         int Rotation { get; }
         bool IsInsideWall { get; set; }
+        bool Locked { get; set; }
         void Rotate();
         /// <summary>
         /// Сколько очков даёт
