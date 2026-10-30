@@ -7,6 +7,8 @@
         Goods = 1,
         Stone = 2,
         Wood = 4,
-        Meal = 8
+        Meal = 8,
+        Skull = 16,
+        Culture = 32
     }
 }

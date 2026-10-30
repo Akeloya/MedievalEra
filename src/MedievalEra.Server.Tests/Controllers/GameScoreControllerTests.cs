@@ -28,6 +28,8 @@ namespace MedievalEra.Server.Tests.Controllers
             await using var dbContext = new AppDbContext(
                 AppDbContext.DatabaseType.InMemory, Guid.NewGuid().ToString());
             var definition = new MedievalEra.Server.Core.Game.BuildingsFactory().Get(type);
+            var quantity = MedievalEra.Server.Core.Game.BuildingsFactory.GameSet
+                .Where(building => building.Type == type).Sum(building => building.Quantity);
             Assert.That(definition.Score, Is.Null);
             var request = new GameScoreRequest
             {
@@ -38,8 +40,8 @@ namespace MedievalEra.Server.Tests.Controllers
                     Buildings = number == 1
                         ? [new BuildingScoreRequest
                         {
-                            Building = type, Count = definition.Quantity,
-                            InsideWallCount = definition.Quantity + (exceedInsideWall ? 1 : 0)
+                            Building = type, Count = quantity,
+                            InsideWallCount = quantity + (exceedInsideWall ? 1 : 0)
                         }, new BuildingScoreRequest { Building = Buildings.Tower, Count = 1, InsideWallCount = 1 }]
                         : number == 2 && exceedSet
                             ? [new BuildingScoreRequest { Building = type, Count = 1 }]
@@ -60,8 +62,8 @@ namespace MedievalEra.Server.Tests.Controllers
             var player = await dbContext.PlayerScores.Include(player => player.Buildings)
                 .SingleAsync(player => player.PlayerNumber == 1);
             var building = player.Buildings.Single(building => building.Building == type);
-            Assert.That(building.Count, Is.EqualTo(definition.Quantity));
-            Assert.That(building.InsideWallCount, Is.EqualTo(definition.Quantity));
+            Assert.That(building.Count, Is.EqualTo(quantity));
+            Assert.That(building.InsideWallCount, Is.EqualTo(quantity));
             Assert.That(building.Points, Is.Zero);
             Assert.That(player.IntermediateTotal, Is.EqualTo(2));
             Assert.That(player.FinalTotal, Is.EqualTo(2));

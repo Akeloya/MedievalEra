@@ -1,5 +1,5 @@
 using System.Security.Claims;
-
+using MedievalEra.Server.Core.Game;
 using MedievalEra.Server.Core.Store;
 using MedievalEra.Server.Core.Store.Entitites;
 
@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace MedievalEra.Server.Controllers
 {
@@ -180,7 +181,8 @@ namespace MedievalEra.Server.Controllers
                 })
                 .ToListAsync();
 
-            var buildingNames = MedievalEra.Server.Core.Game.BuildingsFactory.GameSet
+            var buildingNames = BuildingsFactory.GameSet
+                .DistinctBy(building => building.Type)
                 .ToDictionary(building => building.Type, building => building.Name);
             var recentResultsWithBuildingNames = recentResults.Select(result => new
             {
@@ -295,7 +297,7 @@ namespace MedievalEra.Server.Controllers
                     });
                 }
 
-                Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction? transaction = null;
+                IDbContextTransaction? transaction = null;
                 try
                 {
                     if (_dbContext.Database.IsRelational())

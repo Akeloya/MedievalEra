@@ -51,13 +51,15 @@ namespace MedievalEra.Server.Controllers
                 }
             }
 
-            foreach (var building in BuildingsFactory.GameSet)
+            foreach (var definitions in BuildingsFactory.GameSet.GroupBy(building => building.Type))
             {
+                var building = definitions.First();
                 var built = request.Players.SelectMany(player => player.Buildings!)
                     .Where(item => item.Building == building.Type).Sum(item => (long)item.Count);
-                if (built > building.Quantity)
+                var quantity = definitions.Sum(definition => definition.Quantity);
+                if (built > quantity)
                 {
-                    return BadRequest($"Превышен запас здания «{building.Name}»: построено {built}, в наборе {building.Quantity}.");
+                    return BadRequest($"Превышен запас здания «{building.Name}»: построено {built}, в наборе {quantity}.");
                 }
             }
 

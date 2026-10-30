@@ -1,10 +1,10 @@
-﻿using MedievalEra.Server.Core.Game.Dice;
+using MedievalEra.Server.Core.Game.Dice;
 using MedievalEra.Server.Core.Game.Enums;
 using MedievalEra.Server.Core.Game.Interfaces;
 
 namespace MedievalEra.Server.Core.Game.Deck
 {
-    public class PlayerDeck
+    public class PlayerDeck : IPlayerDeck
     {
         public const int BoardSize = 14;
         private readonly int?[,] _field = new int?[BoardSize, BoardSize];
@@ -17,9 +17,26 @@ namespace MedievalEra.Server.Core.Game.Deck
         public IReadOnlyDictionary<int, IBuilding> Buildings =>
             new System.Collections.ObjectModel.ReadOnlyDictionary<int, IBuilding>(_buildings);
         public IReadOnlyList<IBuilding> UnbuiltBuildings => _unbuiltBuildings.AsReadOnly();
+        public IPlayer Player { get; }
+        public IResource Goods { get; private set; } = null!;
+        public IResource Stone { get; private set; } = null!;
+        public IResource Wood { get; private set; } = null!;
+        public IResource Meal { get; private set; } = null!;
+        public IReadOnlyCollection<IResource> GameResources { get; private set; } = null!;
+        public IResource Skull { get; private set; } = null!;
+        public IResource Culture { get; private set; } = null!;
 
         private void InitializeBoard()
         {
+            // Начальные значения ресурсов и пределы шкал планшета.
+            Skull = new GameResource(GamingSource.Skull, 0, 25);
+            Culture = new GameResource(GamingSource.Culture, 0, 25);
+            Goods = new GameResource(GamingSource.Goods, 0, 6);
+            Stone = new GameResource(GamingSource.Stone, 1, 7);
+            Wood = new GameResource(GamingSource.Wood, 2, 8);
+            Meal = new GameResource(GamingSource.Meal, 3, 10);
+            GameResources = Array.AsReadOnly<IResource>([Goods, Stone, Wood, Meal]);
+
             var tower = new Building(Enums.Buildings.Tower, "Башня", 1, 1, DiceType.Nobility);
             tower.IsPlaced = true;
             _buildings.Add(0, tower);
@@ -143,12 +160,23 @@ namespace MedievalEra.Server.Core.Game.Deck
         private readonly DiceFactory _diceFactory;
         private readonly List<IDice> _rollingDices = new(4);
         private readonly List<IDice> _freezedDices = new(4);
+        private readonly List<IDice> _allDices = new(4);
+        private readonly List<IDice> _newDices = [];
+
+        public void AddDice(DiceType type) => _newDices.Add(_diceFactory.GetDice(type));
         public PlayerDeck(string playerName, DiceFactory diceFactory)
+            : this(new Player.Player(0, playerName), diceFactory)
         {
+        }
+
+        public PlayerDeck(IPlayer player, DiceFactory diceFactory)
+        {
+            ArgumentNullException.ThrowIfNull(player);
+            Player = player;
             InitializeBoard();
-            PlayerName = playerName;
             _diceFactory = diceFactory;
             _rollingDices.AddRange(_diceFactory.GetStarterKit());
+            _allDices.AddRange(_rollingDices);
         }
 
         /// <summary>
@@ -159,29 +187,103 @@ namespace MedievalEra.Server.Core.Game.Deck
         {
             throw new NotImplementedException("Восстановление доски из хранилища пока не реализовано.");
         }
-        public string PlayerName { get; }
-        public Dictionary<GamingSource, int> Resources { get; } = new()
+        public string PlayerName => Player.Name;
+        public IReadOnlyDictionary<GamingSource, int> Resources =>
+            GameResources.ToDictionary(resource => resource.Resource, resource => resource.Count);
+        public int Skulls => Skull.Count;
+        public int RestRolls { get; private set; } = TotalRolls;
+        public bool IsTurnCompleted { get; private set; } = true;
+        private readonly Dictionary<IDice, IDiceFace> _currentFaces = new(ReferenceEqualityComparer.Instance);
+        public IReadOnlyDictionary<IDice, IDiceFace> CurrentFaces =>
+            new System.Collections.ObjectModel.ReadOnlyDictionary<IDice, IDiceFace>(_currentFaces);
+        public IEnumerable<IDice> Dices => _allDices.AsReadOnly();
+        public IEnumerable<IDice> RollingDices => _rollingDices.AsReadOnly();
+        public IEnumerable<IDice> FreezedDices => _freezedDices.AsReadOnly();
+
+        internal void StartRound()
         {
-            { GamingSource.Goods, 0},
-            { GamingSource.Stone, 1},
-            { GamingSource.Wood, 2},
-            { GamingSource.Meal, 3}
-        };
-        public int Skulls { get; }
-        public int Culture { get; }
-        public int RestRolls { get; } = TotalRolls;
-        public IEnumerable<IDice> Dices => RollingDices.Union(FreezedDices);
-        public IEnumerable<IDice> RollingDices => _rollingDices;
-        public IEnumerable<IDice> FreezedDices => _freezedDices;
+            _allDices.AddRange(_newDices);
+            _rollingDices.AddRange(_newDices);
+            _newDices.Clear();
+            foreach (var dice in Dices) dice.Unlock();
+            _rollingDices.AddRange(_freezedDices);
+            _freezedDices.Clear();
+            _currentFaces.Clear();
+            RestRolls = TotalRolls;
+            IsTurnCompleted = false;
+        }
 
         public void Roll()
         {
+            RequireActiveTurn();
+            if (RestRolls == 0) throw new InvalidOperationException("Нет доступных бросков.");
+            foreach (var dice in _rollingDices.ToArray())
+            {
+                _currentFaces[dice] = dice.Roll();
+                if (HasResource(dice, DiceResource.Skull)) Freeze(dice);
+            }
+            RestRolls--;
+            if (RestRolls == 0 && !_rollingDices.Any(dice => HasResource(dice, DiceResource.NewRoll)))
+                Finish();
+        }
 
+        public void Freeze(IDice dice)
+        {
+            RequireActiveTurn();
+            if (!_rollingDices.Contains(dice) || !_currentFaces.TryGetValue(dice, out var face))
+                throw new InvalidOperationException("Кубик недоступен для фиксации.");
+            dice.Lock(face);
+            _rollingDices.Remove(dice);
+            _freezedDices.Add(dice);
+        }
+
+        public void Unfreeze(IDice dice)
+        {
+            RequireActiveTurn();
+            if (RestRolls == 0 || !_freezedDices.Contains(dice) || HasResource(dice, DiceResource.Skull))
+                throw new InvalidOperationException("Кубик нельзя разморозить.");
+            dice.Unlock();
+            _freezedDices.Remove(dice);
+            _rollingDices.Add(dice);
+        }
+
+        public void ExtraRoll(IDice clergy, IDice target)
+        {
+            RequireActiveTurn();
+            if (RestRolls != 0 || ReferenceEquals(clergy, target) ||
+                clergy.DiceType != DiceType.Clergy || !_rollingDices.Contains(clergy) ||
+                !HasResource(clergy, DiceResource.NewRoll) || !Dices.Contains(target) ||
+                !_currentFaces.ContainsKey(target) || HasResource(target, DiceResource.Skull))
+                throw new InvalidOperationException("Недопустимая пара для дополнительного броска.");
+            foreach (var dice in new[] { clergy, target })
+            {
+                dice.Unlock();
+                _freezedDices.Remove(dice);
+                if (!_rollingDices.Contains(dice)) _rollingDices.Add(dice);
+                _currentFaces[dice] = dice.Roll();
+                if (HasResource(dice, DiceResource.Skull)) Freeze(dice);
+            }
+            if (!HasResource(clergy, DiceResource.NewRoll))
+                foreach (var dice in new[] { clergy, target })
+                    if (_rollingDices.Contains(dice)) Freeze(dice);
+            if (!_rollingDices.Any(dice => HasResource(dice, DiceResource.NewRoll))) Finish();
         }
 
         public void Finish()
         {
+            RequireActiveTurn();
+            if (_currentFaces.Count == 0) throw new InvalidOperationException("Сначала бросьте кубики.");
+            foreach (var dice in _rollingDices.ToArray()) Freeze(dice);
+            RestRolls = 0;
+            IsTurnCompleted = true;
+        }
 
+        private bool HasResource(IDice dice, DiceResource resource) =>
+            _currentFaces.TryGetValue(dice, out var face) && face.Values.GetValueOrDefault(resource) > 0;
+
+        private void RequireActiveTurn()
+        {
+            if (IsTurnCompleted) throw new InvalidOperationException("Ход не начат или уже завершён.");
         }
     }
 }
